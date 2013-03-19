@@ -26,6 +26,17 @@
 static inline void fillDescriptorAddr(volatile void *baseAddr, IOPhysicalAddress64 txPhyAddr, IOPhysicalAddress64 rxPhyAddr);
 static inline u32 ether_crc(int length, unsigned char *data);
 
+#if 1
+//REVIEW: hack because 10.8.3 doesn't export these reserved methods, yet this kext imports them...
+// to fix this, we link them privately...
+#define HACK_OSMetaClassDefineReservedUnused(className, index) \
+void className ::_RESERVED ## className ## index () { gMetaClass.reservedCalled(index); }
+
+HACK_OSMetaClassDefineReservedUnused(IONetworkController, 2)
+HACK_OSMetaClassDefineReservedUnused(IONetworkController, 3)
+HACK_OSMetaClassDefineReservedUnused(IONetworkController, 4)
+#endif
+
 #pragma mark --- public methods ---
 
 OSDefineMetaClassAndStructors(RTL8111, super)
