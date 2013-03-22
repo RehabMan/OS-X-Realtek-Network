@@ -35,6 +35,19 @@
 #define ReadReg16(reg)          OSReadLittleInt16((baseAddr), (reg))
 #define ReadReg32(reg)          OSReadLittleInt32((baseAddr), (reg))
 
+#define HACK_OSMetaClassDefineReservedUnused(classNameReal, classNameSuper, index) \
+void classNameReal ::_RESERVED ## classNameSuper ## index () { gMetaClass.reservedCalled(index); }
+
+#define HACK_OSMetaClassDeclareReservedUnused(className, index)        \
+private:                                                      \
+virtual void _RESERVED ## className ## index ()
+
+#include <Availability.h>
+
+#define MakeKernelVersion(maj,min,rev) (maj<<16|min<<8|rev)
+#include <libkern/version.h>
+#define GetKernelVersion() MakeKernelVersion(version_major,version_minor,version_revision)
+
 #define super IOEthernetController
 
 enum
@@ -154,8 +167,11 @@ public:
 	virtual IOReturn registerWithPolicyMaker(IOService *policyMaker);
     virtual IOReturn setPowerState(unsigned long powerStateOrdinal, IOService *policyMaker );
 	virtual void systemWillShutdown(IOOptionBits specifier);
+#if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1070
+    virtual IOReturn message(UInt32 type, IOService * provider, void * argument);
+#endif
 
-	/* IONetworkController methods. */	
+	/* IONetworkController methods. */
 	virtual IOReturn enable(IONetworkInterface *netif);
 	virtual IOReturn disable(IONetworkInterface *netif);
 	
@@ -173,8 +189,24 @@ public:
 	
 	virtual bool createWorkLoop();
 	virtual IOWorkLoop* getWorkLoop() const;
-	
-	/* Methods inherited from IOEthernetController. */	
+
+#ifdef __MAC_10_7   // compiling SDK 10.7 or greater
+#if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1070
+    //HACK: needed to avoid unresolved externals loading on SL 10.6.8
+    virtual UInt32 getDebuggerLinkStatus(void);
+    virtual bool setDebuggerMode(bool active);
+#endif
+#else // compiling SDK 10.6
+    //HACK: needed to avoid unresolved externals loading on ML 10.8.3
+    HACK_OSMetaClassDeclareReservedUnused(IONetworkController, 0);
+    HACK_OSMetaClassDeclareReservedUnused(IONetworkController, 1);
+#endif
+    //HACK: needed to avoid unresolved externals loading on ML 10.8.3
+    HACK_OSMetaClassDeclareReservedUnused(IONetworkController, 2);
+    HACK_OSMetaClassDeclareReservedUnused(IONetworkController, 3);
+    HACK_OSMetaClassDeclareReservedUnused(IONetworkController, 4);
+
+	/* Methods inherited from IOEthernetController. */
 	virtual IOReturn getHardwareAddress(IOEthernetAddress *addr);
 	virtual IOReturn setHardwareAddress(const IOEthernetAddress *addr);
 	virtual IOReturn setPromiscuousMode(bool active);

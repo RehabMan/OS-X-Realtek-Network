@@ -2,16 +2,6 @@
 // Prefix header for all source files of the 'RealtekRTL8111' target in the 'RealtekRTL8111' project
 //
 
-//REVIEW_REHABMAN: second way to handle the undefined IONetworkController reserved (2,3,4)
-// methods.  Turns out they added real functions for these vtable slots and now
-// no longer define the reserved methods in IONetworkingFamily.
-//
-// I don't get how they can do that, as there could have already been drivers that import them
-//
-
-////#define __PRIVATE_SPI__
-////#include "../IONetworkController.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus

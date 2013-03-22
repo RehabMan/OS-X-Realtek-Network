@@ -26,15 +26,52 @@
 static inline void fillDescriptorAddr(volatile void *baseAddr, IOPhysicalAddress64 txPhyAddr, IOPhysicalAddress64 rxPhyAddr);
 static inline u32 ether_crc(int length, unsigned char *data);
 
-#if 1
-//REVIEW: hack because 10.8.3 doesn't export these reserved methods, yet this kext imports them...
-// to fix this, we link them privately...
-#define HACK_OSMetaClassDefineReservedUnused(className, index) \
-void className ::_RESERVED ## className ## index () { gMetaClass.reservedCalled(index); }
+#pragma mark --- compatibility stuff ---
 
-HACK_OSMetaClassDefineReservedUnused(IONetworkController, 2)
-HACK_OSMetaClassDefineReservedUnused(IONetworkController, 3)
-HACK_OSMetaClassDefineReservedUnused(IONetworkController, 4)
+//HACK: from 10.7 SDK headers...
+#ifndef __MAC_10_7
+enum {
+    kChecksumTCPIPv6             = 0x0020,
+    kChecksumUDPIPv6             = 0x0040,
+};
+#define kIOMessageDeviceSignaledWakeup     iokit_common_msg(0x350)
+#endif
+
+#ifdef __MAC_10_7
+//HACK: these are needed for loading on Snow Leopard...
+#if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1070
+UInt32 RTL8111::getDebuggerLinkStatus(void) { return kIONetworkLinkValid|kIONetworkLinkActive; }
+bool RTL8111::setDebuggerMode(bool active) { return false; }
+#endif
+#else
+//HACK: needed for loading on ML 10.8.3
+HACK_OSMetaClassDefineReservedUnused(RTL8111, IONetworkController, 0)
+HACK_OSMetaClassDefineReservedUnused(RTL8111, IONetworkController, 1)
+#endif
+
+//HACK: need to define these methods to load on 10.8.3
+HACK_OSMetaClassDefineReservedUnused(RTL8111, IONetworkController, 2)
+HACK_OSMetaClassDefineReservedUnused(RTL8111, IONetworkController, 3)
+HACK_OSMetaClassDefineReservedUnused(RTL8111, IONetworkController, 4)
+
+#if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1070
+IOReturn RTL8111::message(UInt32 type, IOService * provider, void * argument)
+{
+    //HACK: To have same behavior of IONetworkController::message but without
+    // importing it (because it isn't implemented in Snow Leopard) but is in later
+    // versions of IONetworkController.
+
+    // This code is from the source to IONetworkController::message
+    // IOEthernetController doesn't implement this member function, so we don't
+    // need to worry about that.
+    if (kIOMessageDeviceSignaledWakeup == type)
+    {
+        return pciDevice->callPlatformFunction("IOPlatformDeviceSignaledWakeup", false, this, 0, 0, 0);
+    }
+    // We skip IONetworkController::message because we are implementing it exactly as
+    // IONetworkController::message does....
+    return IOService::message(type, provider, argument);
+}
 #endif
 
 #pragma mark --- public methods ---
@@ -741,7 +778,9 @@ IOReturn RTL8111::getChecksumSupport(UInt32 *checksumMask, UInt32 checksumFamily
     
     if ((checksumFamily == kChecksumFamilyTCPIP) && checksumMask) {
         if (isOutput) {
-            *checksumMask = (kChecksumTCP | kChecksumUDP | kChecksumIP | kChecksumTCPIPv6 | kChecksumUDPIPv6);
+            *checksumMask = (kChecksumTCP | kChecksumUDP | kChecksumIP);
+            if (GetKernelVersion() >= MakeKernelVersion(11, 0, 0))
+                *checksumMask |= kChecksumTCPIPv6 | kChecksumUDPIPv6;
         } else {
             /* The MSI Z77MA-G45's onboard NIC is broken so that we have to disable rx checksum offload. */
             if ((pciDeviceData.subsystem_vendor == 0x1462) && (pciDeviceData.subsystem_device == 0x7759))
