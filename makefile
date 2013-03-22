@@ -1,7 +1,7 @@
 # really just some handy scripts...
 
 KEXT=RealtekRTL8111.kext
-DIST=RehabMan-Realtek
+DIST=RehabMan-Realtek-Network
 
 ifeq ($(findstring 32,$(BITS)),32)
 OPTIONS:=$(OPTIONS) -arch i386
