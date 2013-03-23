@@ -473,7 +473,7 @@ UInt32 RTL8111::outputPacket(mbuf_t m, void *param)
     RtlDmaDesc *desc, *firstDesc;
     UInt32 result = kIOReturnOutputDropped;
     mbuf_tso_request_flags_t tsoFlags;
-    UInt32 mssValue;
+    u_int32_t mssValue;
     UInt32 cmd;
     UInt32 opts1;
     UInt32 opts2;
@@ -762,7 +762,7 @@ IOReturn RTL8111::setMulticastList(IOEthernetAddress *addrs, UInt32 count)
         }
         multicastFilter = OSSwapInt64(filter);
     } else {
-        multicastFilter = 0xffffffffffffffff;
+        multicastFilter = 0xffffffffffffffffULL;
     }
     WriteReg32(MAR0, *filterAddr++);
     WriteReg32(MAR1, *filterAddr);
@@ -1614,7 +1614,7 @@ bool RTL8111::checkForDeadlock()
             
             for (i = 0; i < 10; i++) {
                 index = ((txDirtyDescIndex - 5 + i) & kTxDescMask);
-                DebugLog("Ethernet [RealtekRTL8111]: desc[%u]: opts1=0x%x, opts2=0x%x, addr=0x%llx.\n", index, txDescArray[index].opts1, txDescArray[index].opts2, txDescArray[index].addr);
+                DebugLog("Ethernet [RealtekRTL8111]: desc[%u]: opts1=0x%x, opts2=0x%x, addr=0x%llx.\n", (unsigned int)index, (unsigned int)txDescArray[index].opts1, (unsigned int)txDescArray[index].opts2, txDescArray[index].addr);
             }
 #endif
             IOLog("Ethernet [RealtekRTL8111]: Resolving Tx deadlock.\n");
@@ -1870,7 +1870,7 @@ void RTL8111::setLinkUp(UInt8 linkState)
         stalled = false;
         DebugLog("Ethernet [RealtekRTL8111]: Restart stalled queue!\n");
     }
-    IOLog("Ethernet [RealtekRTL8111]: Link up on en%u, %s, %s, %s\n", unitNumber, speedName, duplexName, flowName);
+    IOLog("Ethernet [RealtekRTL8111]: Link up on en%u, %s, %s, %s\n", (unsigned int)unitNumber, speedName, duplexName, flowName);
 }
 
 void RTL8111::setLinkDown()
@@ -1888,7 +1888,7 @@ void RTL8111::setLinkDown()
     IOLockLock(txLock);
     txClearDescriptors(false);
     IOLockUnlock(txLock);
-    IOLog("Ethernet [RealtekRTL8111]: Link down on en%u\n", unitNumber);
+    IOLog("Ethernet [RealtekRTL8111]: Link down on en%u\n", (unsigned int)unitNumber);
 }
 
 #pragma mark --- hardware initialization methods ---
@@ -1927,7 +1927,7 @@ bool RTL8111::initPCIConfigSpace(IOPCIDevice *provider)
     if (provider->findPCICapability(kIOPCIPCIExpressCapability, &pcieCapOffset)) {
         pcieLinkCap = provider->configRead32(pcieCapOffset + kIOPCIELinkCapability);
         pcieLinkCtl = provider->configRead16(pcieCapOffset + kIOPCIELinkControl);
-        DebugLog("Ethernet [RealtekRTL8111]: PCIe link capabilities: 0x%08x, link control: 0x%04x.\n", pcieLinkCap, pcieLinkCtl);
+        DebugLog("Ethernet [RealtekRTL8111]: PCIe link capabilities: 0x%08x, link control: 0x%04x.\n", (unsigned int)pcieLinkCap, pcieLinkCtl);
         
         if (pcieLinkCtl & (kIOPCIELinkCtlASPM | kIOPCIELinkCtlClkReqEn)) {
             IOLog("Ethernet [RealtekRTL8111]: Warning: PCIe ASPM enabled.\n");
