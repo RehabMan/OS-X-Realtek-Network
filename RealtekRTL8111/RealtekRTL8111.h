@@ -20,6 +20,10 @@
 
 #include "RealtekRTL8111Linux.h"
 
+#ifndef EXPORT
+#define EXPORT __attribute__((visibility("default")))
+#endif
+
 #ifdef DEBUG
 #define DebugLog(args...) IOLog(args)
 #else
@@ -47,8 +51,6 @@ virtual void _RESERVED ## className ## index ()
 #define MakeKernelVersion(maj,min,rev) (maj<<16|min<<8|rev)
 #include <libkern/version.h>
 #define GetKernelVersion() MakeKernelVersion(version_major,version_minor,version_revision)
-
-#define super IOEthernetController
 
 enum
 {
@@ -151,9 +153,9 @@ enum
 
 extern const struct RTLChipInfo rtl_chip_info[];
 
-class RTL8111 : public super
+class EXPORT RTL8111 : public IOEthernetController
 {
-	
+    typedef IOEthernetController super;
 	OSDeclareDefaultStructors(RTL8111)
 	
 public:
