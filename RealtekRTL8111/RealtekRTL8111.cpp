@@ -613,6 +613,7 @@ const OSString* RTL8111::newModelString() const
 
 bool RTL8111::configureInterface(IONetworkInterface *interface)
 {
+    char modelName[kNameLenght];
     IONetworkData *data;
     bool result;
 
@@ -648,6 +649,8 @@ bool RTL8111::configureInterface(IONetworkInterface *interface)
         }
     }
     unitNumber = interface->getUnitNumber();
+    snprintf(modelName, kNameLenght, "Realtek %s PCI Express Gigabit Ethernet", rtl_chip_info[linuxData.chipset].name);
+    setProperty("model", modelName);
     
     DebugLog("configureInterface() <===\n");
 
@@ -778,16 +781,13 @@ IOReturn RTL8111::getChecksumSupport(UInt32 *checksumMask, UInt32 checksumFamily
     
     if ((checksumFamily == kChecksumFamilyTCPIP) && checksumMask) {
         if (isOutput) {
-            *checksumMask = (kChecksumTCP | kChecksumUDP | kChecksumIP);
+            *checksumMask = (kChecksumTCP | kChecksumUDP | kChecksumIP | kChecksumTCPIPv6 | kChecksumUDPIPv6);
             if (GetKernelVersion() >= MakeKernelVersion(11, 0, 0))
                 *checksumMask |= kChecksumTCPIPv6 | kChecksumUDPIPv6;
-        } else {
-            /* The MSI Z77MA-G45's onboard NIC is broken so that we have to disable rx checksum offload. */
-            if ((pciDeviceData.subsystem_vendor == 0x1462) && (pciDeviceData.subsystem_device == 0x7759))
-                *checksumMask = 0;
-            else
-                *checksumMask = (kChecksumTCP | kChecksumUDP | kChecksumIP);
         }
+        else
+            *checksumMask = (kChecksumTCP | kChecksumUDP | kChecksumIP);
+
         result = kIOReturnSuccess;
     }
     return result;
@@ -857,7 +857,10 @@ IOReturn RTL8111::getPacketFilters(const OSSymbol *group, UInt32 *filters) const
 
 
 UInt32 RTL8111::getFeatures() const
-{    
+{
+    DebugLog("getFeatures() ===>\n");
+    DebugLog("getFeatures() <===\n");
+
     return (kIONetworkFeatureMultiPages | kIONetworkFeatureHardwareVlan | kIONetworkFeatureTSOIPv4 /*| kIONetworkFeatureTSOIPv6*/);
 }
 
@@ -1670,7 +1673,7 @@ void RTL8111::getDescCommand(UInt32 *cmd1, UInt32 *cmd2, UInt32 checksums, UInt3
                 *cmd2 |= TxIPCS_C;
         }
     } else {
-        if (tsoFlags) {
+        if (tsoFlags & MBUF_TSO_IPV4) {
             /* This is a TSO operation so that there are no checksum command bits. */
             *cmd1 = (LargeSend |((mssValue & MSSMask) << MSSShift));
         } else {
@@ -1766,7 +1769,11 @@ void RTL8111::getChecksumResult(mbuf_t m, UInt32 status1, UInt32 status2)
             validMask = (status1 & RxIPF) ? 0 : kChecksumIP;
         }
     }
-    setChecksumResult(m, kChecksumFamilyTCPIP, resultMask, validMask);
+    if (validMask != resultMask)
+        IOLog("Ethernet [RealtekRTL8111]: checksums applied: 0x%x, checksums valid: 0x%x\n", resultMask, validMask);
+
+    if (validMask)
+        setChecksumResult(m, kChecksumFamilyTCPIP, resultMask, validMask);
 }
 
 #else   /* The release build doesn't include support for RTL8111B/8168B. */
@@ -1774,34 +1781,27 @@ void RTL8111::getChecksumResult(mbuf_t m, UInt32 status1, UInt32 status2)
 void RTL8111::getChecksumResult(mbuf_t m, UInt32 status1, UInt32 status2)
 {
     UInt32 resultMask = 0;
-    UInt32 validMask = 0;
     UInt32 pktType = (status1 & RxProtoMask);
     
     /* Get the result of the checksum calculation and store it in the packet. */
     if (pktType == RxTCPT) {
         /* TCP packet */
-        if (status2 & RxV4F) {
-            resultMask = (kChecksumTCP | kChecksumIP);
-            validMask = (status1 & RxTCPF) ? 0 : (kChecksumTCP | kChecksumIP);
-        } else {
-            resultMask = kChecksumTCP;
-            validMask = (status1 & RxTCPF) ? 0 : kChecksumTCP;
-        }
+        if (status2 & RxV4F)
+            resultMask = (status1 & RxTCPF) ? 0 : (kChecksumTCP | kChecksumIP);
+        else
+            resultMask = (status1 & RxTCPF) ? 0 : kChecksumTCP;
     } else if (pktType == RxUDPT) {
         /* UDP packet */
-        if (status2 & RxV4F) {
-            resultMask = (kChecksumUDP | kChecksumIP);
-            validMask = (status1 & RxUDPF) ? 0 : (kChecksumUDP | kChecksumIP);
-        } else {
-            resultMask = kChecksumUDP;
-            validMask = (status1 & RxUDPF) ? 0 : kChecksumUDP;
-        }
+        if (status2 & RxV4F)
+            resultMask = (status1 & RxUDPF) ? 0 : (kChecksumUDP | kChecksumIP);
+        else
+            resultMask = (status1 & RxUDPF) ? 0 : kChecksumUDP;
     } else if ((pktType == 0) && (status2 & RxV4F)) {
         /* IP packet */
-        resultMask = kChecksumIP;
-        validMask = (status1 & RxIPF) ? 0 : kChecksumIP;
+        resultMask = (status1 & RxIPF) ? 0 : kChecksumIP;
     }
-    setChecksumResult(m, kChecksumFamilyTCPIP, resultMask, validMask);
+    if (resultMask)
+        setChecksumResult(m, kChecksumFamilyTCPIP, resultMask, resultMask);
 }
 
 #endif
@@ -3185,7 +3185,7 @@ void RTL8111::timerActionRTL8111B(IOTimerEventSource *timer)
 	UInt8 currLinkState;
     bool newLinkState;
     
-    DebugLog("timerActionRTL8111B() ===>\n");
+    //DebugLog("timerActionRTL8111B() ===>\n");
     
     currLinkState = ReadReg8(PHYstatus);
 	newLinkState = (currLinkState & LinkStatus) ? true : false;
@@ -3217,7 +3217,7 @@ done:
     timerSource->setTimeoutMS(kTimeoutMS);
     txDescDoneLast = txDescDoneCount;
     
-    DebugLog("timerActionRTL8111B() <===\n");
+    //DebugLog("timerActionRTL8111B() <===\n");
 }
 #endif
 

@@ -150,6 +150,7 @@ enum
 };
 
 #define kEnableEeeName "enableEEE"
+#define kNameLenght 64
 
 extern const struct RTLChipInfo rtl_chip_info[];
 
