@@ -228,43 +228,43 @@ public:
     virtual UInt32 getFeatures() const;
     
 private:
-    bool initPCIConfigSpace(IOPCIDevice *provider);
-    static IOReturn setPowerStateWakeAction(OSObject *owner, void *arg1, void *arg2, void *arg3, void *arg4);
-    static IOReturn setPowerStateSleepAction(OSObject *owner, void *arg1, void *arg2, void *arg3, void *arg4);
-    bool setupMediumDict();
-    bool initEventSources(IOService *provider);
-    void interruptOccurred(OSObject *client, IOInterruptEventSource *src, int count);
-    void pciErrorInterrupt();
-    void txInterrupt();
-    void rxInterrupt();
-    bool setupDMADescriptors();
-    void freeDMADescriptors();
-    void txClearDescriptors(bool withReset);
-    void checkLinkStatus();
-    void updateStatitics();
-    void setLinkUp(UInt8 linkState);
-    void setLinkDown();
-    bool checkForDeadlock();
-    void dumpTallyCounter();
+    PRIVATE bool initPCIConfigSpace(IOPCIDevice *provider);
+    PRIVATE static IOReturn setPowerStateWakeAction(OSObject *owner, void *arg1, void *arg2, void *arg3, void *arg4);
+    PRIVATE static IOReturn setPowerStateSleepAction(OSObject *owner, void *arg1, void *arg2, void *arg3, void *arg4);
+    PRIVATE bool setupMediumDict();
+    PRIVATE bool initEventSources(IOService *provider);
+    PRIVATE void interruptOccurred(OSObject *client, IOInterruptEventSource *src, int count);
+    PRIVATE void pciErrorInterrupt();
+    PRIVATE void txInterrupt();
+    PRIVATE void rxInterrupt();
+    PRIVATE bool setupDMADescriptors();
+    PRIVATE void freeDMADescriptors();
+    PRIVATE void txClearDescriptors(bool withReset);
+    PRIVATE void checkLinkStatus();
+    PRIVATE void updateStatitics();
+    PRIVATE void setLinkUp(UInt8 linkState);
+    PRIVATE void setLinkDown();
+    PRIVATE bool checkForDeadlock();
+    PRIVATE void dumpTallyCounter();
 
     /* Hardware initialization methods. */
-    bool initRTL8111();
-    void enableRTL8111();
-    void disableRTL8111();
-    void startRTL8111();
-    void setOffset79(UInt8 setting);
-    void restartRTL8111();
+    PRIVATE bool initRTL8111();
+    PRIVATE void enableRTL8111();
+    PRIVATE void disableRTL8111();
+    PRIVATE void startRTL8111();
+    PRIVATE void setOffset79(UInt8 setting);
+    PRIVATE void restartRTL8111();
         
     /* Hardware specific methods */
-    void getDescCommand(UInt32 *cmd1, UInt32 *cmd2, UInt32 checksums, UInt32 mssValue, mbuf_tso_request_flags_t tsoFlags);
-    void getChecksumResult(mbuf_t m, UInt32 status1, UInt32 status2);
+    PRIVATE void getDescCommand(UInt32 *cmd1, UInt32 *cmd2, UInt32 checksums, UInt32 mssValue, mbuf_tso_request_flags_t tsoFlags);
+    PRIVATE void getChecksumResult(mbuf_t m, UInt32 status1, UInt32 status2);
 
     /* RTL8111C specific methods */
-    void timerActionRTL8111C(IOTimerEventSource *timer);
+    PRIVATE void timerActionRTL8111C(IOTimerEventSource *timer);
 
 #ifdef DEBUG   /* The release build doesn't include support for RTL8111B/8168B. */
     /* RTL8111B/8168B specific methods */
-    void timerActionRTL8111B(IOTimerEventSource *timer);
+    PRIVATE void timerActionRTL8111B(IOTimerEventSource *timer);
 #endif
     
 private:
