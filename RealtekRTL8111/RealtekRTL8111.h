@@ -20,9 +20,8 @@
 
 #include "RealtekRTL8111Linux.h"
 
-#ifndef EXPORT
 #define EXPORT __attribute__((visibility("default")))
-#endif
+#define PRIVATE __attribute__((visibility("hidden")))
 
 #ifdef DEBUG
 #define DebugLog(args...) IOLog(args)
@@ -170,11 +169,11 @@ public:
 	virtual IOReturn registerWithPolicyMaker(IOService *policyMaker);
     virtual IOReturn setPowerState(unsigned long powerStateOrdinal, IOService *policyMaker );
 	virtual void systemWillShutdown(IOOptionBits specifier);
-#ifndef DISABLE_ALL_HACKS
+#if 0 //DISABLE_ALL_HACKS
 #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1070
     virtual IOReturn message(UInt32 type, IOService * provider, void * argument);
 #endif
-#endif
+#endif//DISABLE_ALL_HACKS
 
 	/* IONetworkController methods. */
 	virtual IOReturn enable(IONetworkInterface *netif);
@@ -195,7 +194,7 @@ public:
 	virtual bool createWorkLoop();
 	virtual IOWorkLoop* getWorkLoop() const;
 
-#ifndef DISABLE_ALL_HACKS
+#if 0 //DISABLE_ALL_HACKS
 #ifdef __MAC_10_7   // compiling SDK 10.7 or greater
 #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1070
     //HACK: needed to avoid unresolved externals loading on SL 10.6.8
@@ -211,7 +210,7 @@ public:
     HACK_OSMetaClassDeclareReservedUnused(IONetworkController, 2);
     HACK_OSMetaClassDeclareReservedUnused(IONetworkController, 3);
     HACK_OSMetaClassDeclareReservedUnused(IONetworkController, 4);
-#endif
+#endif//DISABLE_ALL_HACKS
 
 	/* Methods inherited from IOEthernetController. */
 	virtual IOReturn getHardwareAddress(IOEthernetAddress *addr);

@@ -37,8 +37,7 @@ enum {
 #define kIOMessageDeviceSignaledWakeup     iokit_common_msg(0x350)
 #endif
 
-#ifndef DISABLE_ALL_HACKS
-
+#if 0 //DISABLE_ALL_HACKS
 #ifdef __MAC_10_7
 //HACK: these are needed for loading on Snow Leopard...
 #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1070
@@ -75,8 +74,7 @@ IOReturn RTL8111::message(UInt32 type, IOService * provider, void * argument)
     return IOService::message(type, provider, argument);
 }
 #endif
-
-#endif // DISABLE_ALL_HACKS
+#endif //DISABLE_ALL_HACKS
 
 #pragma mark --- public methods ---
 
@@ -959,6 +957,7 @@ static UInt32 mediumSpeedArray[MEDIUM_INDEX_COUNT] = {
     1000 * MBit
 };
 
+PRIVATE
 bool RTL8111::setupMediumDict()
 {
 	IONetworkMedium *medium;
@@ -1001,6 +1000,7 @@ error1:
     goto done;
 }
 
+PRIVATE
 bool RTL8111::initEventSources(IOService *provider)
 {
     IOReturn intrResult;
@@ -1084,6 +1084,7 @@ error1:
     goto done;
 }
 
+PRIVATE
 bool RTL8111::setupDMADescriptors()
 {
     IOPhysicalSegment rxSegment;
@@ -1238,6 +1239,7 @@ error1:
     goto done;
 }
 
+PRIVATE
 void RTL8111::freeDMADescriptors()
 {
     UInt32 i;
@@ -1273,6 +1275,7 @@ void RTL8111::freeDMADescriptors()
     }
 }
 
+PRIVATE
 void RTL8111::txClearDescriptors(bool withReset)
 {
     mbuf_t m;
@@ -1306,6 +1309,7 @@ void RTL8111::txClearDescriptors(bool withReset)
 
 #pragma mark --- common interrupt methods ---
 
+PRIVATE
 void RTL8111::pciErrorInterrupt()
 {
     UInt16 cmdReg = pciDevice->configRead16(kIOPCIConfigCommand);
@@ -1335,6 +1339,7 @@ void RTL8111::pciErrorInterrupt()
  *   few µ secs should be enough).
  */
 
+PRIVATE
 void RTL8111::txInterrupt()
 {
     SInt32 numDirty = kNumTxDesc - txNumFreeDesc;
@@ -1366,6 +1371,7 @@ void RTL8111::txInterrupt()
         WriteReg8(TxPoll, NPQ);
 }
 
+PRIVATE
 void RTL8111::rxInterrupt()
 {
     IOPhysicalSegment rxSegment;
@@ -1449,6 +1455,7 @@ void RTL8111::rxInterrupt()
         netif->flushInputQueue();
 }
 
+PRIVATE
 void RTL8111::updateStatitics()
 {
     UInt32 sgColl, mlColl;
@@ -1470,6 +1477,7 @@ void RTL8111::updateStatitics()
     etherStats->dot3TxExtraEntry.underruns = OSSwapLittleToHostInt16(statData->txUnderun);
 }
 
+PRIVATE
 void RTL8111::checkLinkStatus()
 {
     struct rtl8168_private *tp = &linuxData;
@@ -1576,6 +1584,7 @@ void RTL8111::checkLinkStatus()
 	}
 }
 
+PRIVATE
 void RTL8111::interruptOccurred(OSObject *client, IOInterruptEventSource *src, int count)
 {
 	UInt16 status;
@@ -1610,6 +1619,7 @@ done:
 	WriteReg16(IntrMask, intrMask);
 }
 
+PRIVATE
 bool RTL8111::checkForDeadlock()
 {
     bool deadlock = false;
@@ -1634,6 +1644,7 @@ bool RTL8111::checkForDeadlock()
     return deadlock;
 }
 
+PRIVATE
 void RTL8111::dumpTallyCounter()
 {
     UInt32 cmd;
@@ -1652,6 +1663,7 @@ void RTL8111::dumpTallyCounter()
 
 #ifdef DEBUG
 
+PRIVATE
 void RTL8111::getDescCommand(UInt32 *cmd1, UInt32 *cmd2, UInt32 checksums, UInt32 mssValue, mbuf_tso_request_flags_t tsoFlags)
 {
     if (revisionC) {
@@ -1698,6 +1710,7 @@ void RTL8111::getDescCommand(UInt32 *cmd1, UInt32 *cmd2, UInt32 checksums, UInt3
 
 #else   /* The release build doesn't include support for RTL8111B/8168B. */
 
+PRIVATE
 void RTL8111::getDescCommand(UInt32 *cmd1, UInt32 *cmd2, UInt32 checksums, UInt32 mssValue, mbuf_tso_request_flags_t tsoFlags)
 {
     if (tsoFlags & MBUF_TSO_IPV4) {
@@ -1727,6 +1740,7 @@ void RTL8111::getDescCommand(UInt32 *cmd1, UInt32 *cmd2, UInt32 checksums, UInt3
 
 #ifdef DEBUG
 
+PRIVATE
 void RTL8111::getChecksumResult(mbuf_t m, UInt32 status1, UInt32 status2)
 {
     UInt32 resultMask = 0;
@@ -1782,6 +1796,7 @@ void RTL8111::getChecksumResult(mbuf_t m, UInt32 status1, UInt32 status2)
 
 #else   /* The release build doesn't include support for RTL8111B/8168B. */
 
+PRIVATE
 void RTL8111::getChecksumResult(mbuf_t m, UInt32 status1, UInt32 status2)
 {
     UInt32 resultMask = 0;
@@ -1818,6 +1833,7 @@ static const char *duplexHalfName = "Half-duplex";
 static const char *offFlowName = "No flow-control";
 static const char *onFlowName = "flow-control";
 
+PRIVATE
 void RTL8111::setLinkUp(UInt8 linkState)
 {
     UInt64 mediumSpeed;
@@ -1877,6 +1893,7 @@ void RTL8111::setLinkUp(UInt8 linkState)
     IOLog("Ethernet [RealtekRTL8111]: Link up on en%u, %s, %s, %s\n", (unsigned int)unitNumber, speedName, duplexName, flowName);
 }
 
+PRIVATE
 void RTL8111::setLinkDown()
 {
     deadlockWarn = 0;
@@ -1897,6 +1914,7 @@ void RTL8111::setLinkDown()
 
 #pragma mark --- hardware initialization methods ---
 
+PRIVATE
 bool RTL8111::initPCIConfigSpace(IOPCIDevice *provider)
 {
     UInt32 pcieLinkCap;
@@ -1958,6 +1976,7 @@ done:
     return result;
 }
 
+PRIVATE
 IOReturn RTL8111::setPowerStateWakeAction(OSObject *owner, void *arg1, void *arg2, void *arg3, void *arg4)
 {
     RTL8111 *ethCtlr = OSDynamicCast(RTL8111, owner);
@@ -1968,6 +1987,7 @@ IOReturn RTL8111::setPowerStateWakeAction(OSObject *owner, void *arg1, void *arg
     return kIOReturnSuccess;
 }
 
+PRIVATE
 IOReturn RTL8111::setPowerStateSleepAction(OSObject *owner, void *arg1, void *arg2, void *arg3, void *arg4)
 {    
     RTL8111 *ethCtlr = OSDynamicCast(RTL8111, owner);
@@ -1984,6 +2004,7 @@ IOReturn RTL8111::setPowerStateSleepAction(OSObject *owner, void *arg1, void *ar
     return kIOReturnSuccess;
 }
 
+PRIVATE
 bool RTL8111::initRTL8111()
 {
     struct rtl8168_private *tp = &linuxData;
@@ -2081,6 +2102,7 @@ done:
     return result;
 }
 
+PRIVATE
 void RTL8111::enableRTL8111()
 {
     struct rtl8168_private *tp = &linuxData;
@@ -2090,6 +2112,7 @@ void RTL8111::enableRTL8111()
 	rtl8168_dsm(tp, DSM_IF_UP);
 }
 
+PRIVATE
 void RTL8111::disableRTL8111()
 {
     struct rtl8168_private *tp = &linuxData;
@@ -2109,6 +2132,7 @@ void RTL8111::disableRTL8111()
  * been reestablished.
  */
 
+PRIVATE
 void RTL8111::restartRTL8111()
 {
     /* Stop and cleanup txQueue. Also set the link status to down. */
@@ -2132,6 +2156,7 @@ void RTL8111::restartRTL8111()
     IOLockUnlock(txLock);
 }
 
+PRIVATE
 void RTL8111::startRTL8111()
 {
     struct rtl8168_private *tp = &linuxData;
@@ -3136,6 +3161,7 @@ void RTL8111::startRTL8111()
 
 /* Set PCI configuration space offset 0x79 to setting. */
 
+PRIVATE
 void RTL8111::setOffset79(UInt8 setting)
 {    
     UInt8 deviceControl;
@@ -3152,6 +3178,7 @@ void RTL8111::setOffset79(UInt8 setting)
 
 #pragma mark --- RTL8111C specific methods ---
 
+PRIVATE
 void RTL8111::timerActionRTL8111C(IOTimerEventSource *timer)
 {
     //DebugLog("timerActionRTL8111C() ===>\n");
@@ -3184,6 +3211,7 @@ done:
 #pragma mark --- RTL8111B/8168B specific methods ---
 
 #ifdef DEBUG
+PRIVATE
 void RTL8111::timerActionRTL8111B(IOTimerEventSource *timer)
 {
 	UInt8 currLinkState;
