@@ -785,9 +785,9 @@ IOReturn RTL8111::getChecksumSupport(UInt32 *checksumMask, UInt32 checksumFamily
     
     if ((checksumFamily == kChecksumFamilyTCPIP) && checksumMask) {
         if (isOutput) {
-            *checksumMask = (kChecksumTCP | kChecksumUDP | kChecksumIP | kChecksumTCPIPv6 | kChecksumUDPIPv6);
+            *checksumMask = (kChecksumTCP | kChecksumUDP | kChecksumIP);
             if (GetKernelVersion() >= MakeKernelVersion(11, 0, 0))
-                *checksumMask |= kChecksumTCPIPv6 | kChecksumUDPIPv6;
+                *checksumMask |= (kChecksumTCPIPv6 | kChecksumUDPIPv6);
         }
         else
             *checksumMask = (kChecksumTCP | kChecksumUDP | kChecksumIP);
