@@ -38,12 +38,14 @@
 #define ReadReg16(reg)          OSReadLittleInt16((baseAddr), (reg))
 #define ReadReg32(reg)          OSReadLittleInt32((baseAddr), (reg))
 
+#if 0 //DISABLE_ALL_HACKS
 #define HACK_OSMetaClassDefineReservedUnused(classNameReal, classNameSuper, index) \
 void classNameReal ::_RESERVED ## classNameSuper ## index () { gMetaClass.reservedCalled(index); }
 
 #define HACK_OSMetaClassDeclareReservedUnused(className, index)        \
 private:                                                      \
 virtual void _RESERVED ## className ## index ()
+#endif//DISABLE_ALL_HACKS
 
 #include <Availability.h>
 
