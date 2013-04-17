@@ -170,8 +170,10 @@ public:
 	virtual IOReturn registerWithPolicyMaker(IOService *policyMaker);
     virtual IOReturn setPowerState(unsigned long powerStateOrdinal, IOService *policyMaker );
 	virtual void systemWillShutdown(IOOptionBits specifier);
+#ifndef DISABLE_ALL_HACKS
 #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1070
     virtual IOReturn message(UInt32 type, IOService * provider, void * argument);
+#endif
 #endif
 
 	/* IONetworkController methods. */
@@ -193,6 +195,7 @@ public:
 	virtual bool createWorkLoop();
 	virtual IOWorkLoop* getWorkLoop() const;
 
+#ifndef DISABLE_ALL_HACKS
 #ifdef __MAC_10_7   // compiling SDK 10.7 or greater
 #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1070
     //HACK: needed to avoid unresolved externals loading on SL 10.6.8
@@ -208,6 +211,7 @@ public:
     HACK_OSMetaClassDeclareReservedUnused(IONetworkController, 2);
     HACK_OSMetaClassDeclareReservedUnused(IONetworkController, 3);
     HACK_OSMetaClassDeclareReservedUnused(IONetworkController, 4);
+#endif
 
 	/* Methods inherited from IOEthernetController. */
 	virtual IOReturn getHardwareAddress(IOEthernetAddress *addr);

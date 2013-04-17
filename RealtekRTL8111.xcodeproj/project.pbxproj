@@ -233,9 +233,12 @@
 				LLVM_LTO = NO;
 				"LLVM_LTO[arch=x86_64]" = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
-				OTHER_CFLAGS = "-fno-stack-protector";
+				OTHER_CFLAGS = (
+					"-fno-stack-protector",
+					"-DDISABLE_ALL_HACKS",
+				);
 				"OTHER_LDFLAGS[arch=x86_64]" = "-dead_strip";
-				SDKROOT = macosx10.8;
+				SDKROOT = macosx10.6;
 				SYMROOT = Build;
 			};
 			name = Debug;
@@ -258,9 +261,12 @@
 				LLVM_LTO = NO;
 				"LLVM_LTO[arch=x86_64]" = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
-				OTHER_CFLAGS = "-fno-stack-protector";
+				OTHER_CFLAGS = (
+					"-fno-stack-protector",
+					"-DDISABLE_ALL_HACKS",
+				);
 				"OTHER_LDFLAGS[arch=x86_64]" = "-dead_strip";
-				SDKROOT = macosx10.8;
+				SDKROOT = macosx10.6;
 				SYMROOT = Build;
 			};
 			name = Release;

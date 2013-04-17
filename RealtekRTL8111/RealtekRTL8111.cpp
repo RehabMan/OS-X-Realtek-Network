@@ -37,6 +37,8 @@ enum {
 #define kIOMessageDeviceSignaledWakeup     iokit_common_msg(0x350)
 #endif
 
+#ifndef DISABLE_ALL_HACKS
+
 #ifdef __MAC_10_7
 //HACK: these are needed for loading on Snow Leopard...
 #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1070
@@ -73,6 +75,8 @@ IOReturn RTL8111::message(UInt32 type, IOService * provider, void * argument)
     return IOService::message(type, provider, argument);
 }
 #endif
+
+#endif // DISABLE_ALL_HACKS
 
 #pragma mark --- public methods ---
 
