@@ -28,12 +28,14 @@ https://code.google.com/p/os-x-realtek-network/downloads/list
 
 ### Build Environment
 
-My build environment is currently Xcode 4.61, using SDK 10.8, targeting OS X 10.6.
+My build environment is currently Xcode 4.62, using SDK 10.6, targeting OS X 10.6.
 
-This kext can be built with any of the following SDKs: 10.8, 10.7, or 10.6.
+This kext can be built with any of the following SDKs: 10.8, 10.7, or 10.6 but only by enabling
+the hacks previously used in the code (see DISABLE_ALL_HACKS in the source code)
+
 In addition, it can be built supporting any of these OS X targets: 10.8, 10.7, or 10.6.
 
-For greatest compatibility, the provided build is SDK 10.8 targeting 10.6.
+For greatest compatibility, the provided build is SDK 10.6 targeting 10.6.
 
 
 ### 32-bit Builds
@@ -54,13 +56,28 @@ https://github.com/RehabMan/OS-X-Realtek-Network
 
 Please use the following thread on tonymacx86.com for feedback, questions, and help:
 
-TODO: provide link
+http://www.tonymacx86.com/hp-probook/93732-new-kexts-proposed-probook-installer-v6-1-a.html
+
+- or here -
+
+http://www.insanelymac.com/forum/topic/287161-new-driver-for-realtek-rtl8111/
 
 
 ### Known issues:
 
 
 ### Change Log:
+
+2013-04-17 (RehabMan)
+
+- Pulled latest changes from Mieze
+
+- Removed hacks previously necessary for running on SL/Lion
+
+- Now using SDK 10.6
+
+- Now exporting public functions from RTL8111 class (better compatibility with SL)
+
 
 2013-03-22 (RehabMan)
 
