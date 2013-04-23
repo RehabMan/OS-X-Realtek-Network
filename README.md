@@ -1,4 +1,4 @@
-## Fork of Meize's Realtek RTL8111 Network Driver by RehabMan
+## Fork of Mieze's Realtek RTL8111 Network Driver by RehabMan
 
 
 ### How to Install:
@@ -86,14 +86,14 @@ http://www.insanelymac.com/forum/topic/287161-new-driver-for-realtek-rtl8111/
 - Optimize build to reduce code size and exported symbols.
 
 
-2013-03-17 (Meize)
+2013-03-17 (Mieze)
 
-- Initial build provided by Meize on insanelymac.com
+- Initial build provided by Mieze on insanelymac.com
 
 
 ### History
 
-This repository contains a modified version of Meize's Ethernet driver for Realtek RTL8111 series chips.  All credits to Meize for the original code and probably further enhancements/bug fixes.
+This repository contains a modified version of Mieze's Ethernet driver for Realtek RTL8111 series chips.  All credits to Mieze for the original code and probably further enhancements/bug fixes.
 
 Original sources came from this post on Insanely Mac:
 
