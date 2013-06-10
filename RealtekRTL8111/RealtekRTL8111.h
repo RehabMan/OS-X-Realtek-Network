@@ -98,8 +98,8 @@ typedef struct RtlStatData {
 
 #define kTransmitQueueCapacity  1024
 
-/* Tests have shown that the network stack sends packets of up to 20 segments. */
-#define kMaxSegs 24
+/* With up to 40 segments we should be on the save side. */
+#define kMaxSegs 40
 
 /* The number of descriptors must be a power of 2. */
 #define kNumTxDesc	1024	/* Number of Tx descriptors */
@@ -120,7 +120,11 @@ typedef struct RtlStatData {
 #define kTimeoutMS 1000
 
 /* transmitter deadlock treshhold in seconds. */
-#define kTxDeadlockTreshhold 2
+#define kTxDeadlockTreshhold 3
+
+/* IPv6 specific stuff */
+#define kNextHdrOffset 20
+#define kMinL4HdrOffset 54
 
 /* This definition should have been in IOPCIDevice.h. */
 enum
@@ -151,6 +155,9 @@ enum
 };
 
 #define kEnableEeeName "enableEEE"
+#define kEnableCSO6Name "enableCSO6"
+#define kEnableTSO4Name "enableTSO4"
+#define kIntrMitigateName "intrMitigate"
 #define kNameLenght 64
 
 extern const struct RTLChipInfo rtl_chip_info[];
@@ -258,9 +265,13 @@ private:
     PRIVATE void restartRTL8111();
         
     /* Hardware specific methods */
-    PRIVATE void getDescCommand(UInt32 *cmd1, UInt32 *cmd2, UInt32 checksums, UInt32 mssValue, mbuf_tso_request_flags_t tsoFlags);
+    PRIVATE void getDescCommand(UInt32 *cmd1, UInt32 *cmd2, mbuf_csum_request_flags_t checksums, UInt32 mssValue, mbuf_tso_request_flags_t tsoFlags);
     PRIVATE void getChecksumResult(mbuf_t m, UInt32 status1, UInt32 status2);
 
+#ifdef DEBUG
+    UInt32 findL4Header(mbuf_t m, UInt8 protocol);
+#endif
+    
     /* RTL8111C specific methods */
     PRIVATE void timerActionRTL8111C(IOTimerEventSource *timer);
 
@@ -328,6 +339,7 @@ private:
     struct IOEthernetAddress origMacAddr;
     
     UInt16 intrMask;
+    UInt16 intrMitigateValue;
     
     /* flags */
     bool isEnabled;
@@ -340,4 +352,6 @@ private:
     bool wolCapable;
     bool wolActive;
     bool revisionC;
+    bool enableTSO4;
+    bool enableCSO6;
 };

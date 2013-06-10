@@ -17,11 +17,11 @@
 	<key>CFBundlePackageType</key>
 	<string>KEXT</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.4</string>
+	<string>1.1.0</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>1.0.4</string>
+	<string>1.1.0</string>
 	<key>IOKitPersonalities</key>
 	<dict>
 		<key>RTL8111 PCIe Adapter</key>
@@ -34,6 +34,12 @@
 			<string>Realtek</string>
 			<key>enableEEE</key>
 			<true/>
+			<key>enableTSO4</key>
+			<true/>
+			<key>enableCSO6</key>
+			<true/>
+			<key>intrMitigate</key>
+			<integer>44884</integer>
 			<key>IOClass</key>
 			<string>RTL8111</string>
 			<key>IOPCIMatch</key>
@@ -61,5 +67,7 @@
 		<key>com.apple.kpi.mach</key>
 		<string>8.10.0</string>
 	</dict>
+	<key>OSBundleRequired</key>
+	<string>Network-Root</string>
 </dict>
 </plist>
