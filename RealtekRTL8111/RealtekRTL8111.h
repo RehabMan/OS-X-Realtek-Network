@@ -226,8 +226,16 @@ private:
     void startRTL8111();
     void setOffset79(UInt8 setting);
     void restartRTL8111();
-        
+
     IOReturn setPropertiesGated(OSObject* props);
+
+    /* Raw interrupt handler */
+#if CLEAR_STATUS_IN_INTERRUPT
+    static void rawInterruptHandler(OSObject*, void* refCon, IOService*, int);
+    void handleInterrupt();
+    volatile UInt16 _status;
+    int _msiIndex;
+#endif
 
     /* Hardware specific methods */
     void getDescCommand(UInt32 *cmd1, UInt32 *cmd2, mbuf_csum_request_flags_t checksums, UInt32 mssValue, mbuf_tso_request_flags_t tsoFlags);

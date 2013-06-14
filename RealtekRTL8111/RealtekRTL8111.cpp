@@ -18,6 +18,7 @@
  * This driver is based on Realtek's r8168 Linux driver (8.035.0).
  */
 
+#define CLEAR_STATUS_IN_INTERRUPT 1
 
 #include "RealtekRTL8111.h"
 
@@ -81,6 +82,10 @@ bool RTL8111::init(OSDictionary *properties)
         wolActive = false;
         enableTSO4 = false;
         enableCSO6 = false;
+#if CLEAR_STATUS_IN_INTERRUPT
+        _status = 0;
+        _msiIndex = -1;
+#endif
     }
     
 done:
@@ -409,8 +414,14 @@ IOReturn RTL8111::enable(IONetworkInterface *netif)
     enableRTL8111();
     
     /* In case we are using an msi the interrupt hasn't been enabled by start(). */
-    if (useMSI)
+    if (useMSI) {
         interruptSource->enable();
+#if CLEAR_STATUS_IN_INTERRUPT
+        _status = 0;
+        pciDevice->registerInterrupt(_msiIndex, this, &RTL8111::rawInterruptHandler);
+        pciDevice->enableInterrupt(_msiIndex);
+#endif
+    }
 
     txDescDoneCount = txDescDoneLast = 0;
     deadlockWarn = 0;
@@ -444,8 +455,13 @@ IOReturn RTL8111::disable(IONetworkInterface *netif)
     txDescDoneCount = txDescDoneLast = 0;
 
     /* In case we are using msi disable the interrupt. */
-    if (useMSI)
+    if (useMSI) {
         interruptSource->disable();
+#if CLEAR_STATUS_IN_INTERRUPT
+        pciDevice->disableInterrupt(_msiIndex);
+        pciDevice->unregisterInterrupt(_msiIndex);
+#endif
+    }
 
     txQueue->stop();
     txQueue->setCapacity(0);
@@ -1045,7 +1061,11 @@ bool RTL8111::initEventSources(IOService *provider)
     if (msiIndex != -1) {
         DebugLog("Ethernet [RealtekRTL8111]: MSI interrupt index: %d\n", msiIndex);
         
+#if CLEAR_STATUS_IN_INTERRUPT
+        interruptSource = IOInterruptEventSource::interruptEventSource(this, OSMemberFunctionCast(IOInterruptEventSource::Action, this, &RTL8111::interruptOccurred));
+#else
         interruptSource = IOInterruptEventSource::interruptEventSource(this, OSMemberFunctionCast(IOInterruptEventSource::Action, this, &RTL8111::interruptOccurred), provider, msiIndex);
+#endif
     }
     if (!interruptSource) {
         DebugLog("Ethernet [RealtekRTL8111]: Warning: MSI index was not found or MSI interrupt could not be enabled.\n");
@@ -1059,6 +1079,9 @@ bool RTL8111::initEventSources(IOService *provider)
     if (!interruptSource)
         goto error1;
     
+#if CLEAR_STATUS_IN_INTERRUPT
+    _msiIndex = msiIndex;
+#endif
     workLoop->addEventSource(interruptSource);
     
     /*
@@ -1592,13 +1615,46 @@ void RTL8111::checkLinkStatus()
 	}
 }
 
+#if CLEAR_STATUS_IN_INTERRUPT
+//static
+void RTL8111::rawInterruptHandler(OSObject* target, void* refCon, IOService*, int)
+{
+    RTL8111* me = static_cast<RTL8111*>(target);
+    me->handleInterrupt();
+}
+
+void RTL8111::handleInterrupt()
+{
+    bool enable = ml_set_interrupts_enabled(false);
+	WriteReg16(IntrMask, 0x0000);
+    UInt16 status = ReadReg16(IntrStatus);
+    WriteReg16(IntrStatus, status);
+    _status |= status;
+	WriteReg16(IntrMask, intrMask);
+    ml_set_interrupts_enabled(enable);
+    interruptSource->interruptOccurred(0, 0, _msiIndex);
+}
+#endif //CLEAR_STATUS_IN_INTERRUPT
+
 void RTL8111::interruptOccurred(OSObject *client, IOInterruptEventSource *src, int count)
 {
 	UInt16 status;
     
-	WriteReg16(IntrMask, 0x0000);
-    status = ReadReg16(IntrStatus);
-    
+#if CLEAR_STATUS_IN_INTERRUPT
+    if (useMSI) {
+        bool enable = ml_set_interrupts_enabled(false);
+        status = _status;
+        _status = 0;
+        ml_set_interrupts_enabled(enable);
+    } else
+#endif
+    {
+        WriteReg16(IntrMask, 0x0000);
+        status = ReadReg16(IntrStatus);
+        WriteReg16(IntrStatus, status);
+        WriteReg16(IntrMask, intrMask);
+    }
+
     /* hotplug/major error/no more work/shared irq */
     if ((status == 0xFFFF) || !status)
         goto done;
@@ -1622,8 +1678,7 @@ void RTL8111::interruptOccurred(OSObject *client, IOInterruptEventSource *src, i
         updateStatitics();
     
 done:
-    WriteReg16(IntrStatus, status);
-	WriteReg16(IntrMask, intrMask);
+    ;
 }
 
 bool RTL8111::checkForDeadlock()
@@ -2228,6 +2283,9 @@ void RTL8111::startRTL8111()
                 (InterFrameGap << TxInterFrameGapShift));
     
     /* Clear the interrupt status register. */
+#if CLEAR_STATUS_IN_INTERRUPT
+    _status = 0;
+#endif
     WriteReg16(IntrStatus, 0xFFFF);
     
     if (tp->mcfg == CFG_METHOD_4) {
