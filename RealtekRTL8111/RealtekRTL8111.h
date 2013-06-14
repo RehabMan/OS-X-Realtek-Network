@@ -197,6 +197,8 @@ public:
     
     virtual UInt32 getFeatures() const;
     
+    virtual IOReturn setProperties(OSObject* props);
+
 private:
     bool initPCIConfigSpace(IOPCIDevice *provider);
     static IOReturn setPowerStateWakeAction(OSObject *owner, void *arg1, void *arg2, void *arg3, void *arg4);
@@ -225,6 +227,8 @@ private:
     void setOffset79(UInt8 setting);
     void restartRTL8111();
         
+    IOReturn setPropertiesGated(OSObject* props);
+
     /* Hardware specific methods */
     void getDescCommand(UInt32 *cmd1, UInt32 *cmd2, mbuf_csum_request_flags_t checksums, UInt32 mssValue, mbuf_tso_request_flags_t tsoFlags);
     void getChecksumResult(mbuf_t m, UInt32 status1, UInt32 status2);

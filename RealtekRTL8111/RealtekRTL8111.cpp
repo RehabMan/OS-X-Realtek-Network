@@ -227,6 +227,7 @@ bool RTL8111::start(IOService *provider)
         goto error4;
     }
     pciDevice->close(this);
+    registerService();
     result = true;
     
 done:
@@ -288,6 +289,34 @@ void RTL8111::stop(IOService *provider)
     RELEASE(pciDevice);
     
     super::stop(provider);
+}
+
+/* Property support */
+IOReturn RTL8111::setPropertiesGated(OSObject* props)
+{
+    OSDictionary* dict = OSDynamicCast(OSDictionary, props);
+    if (!dict)
+        return kIOReturnSuccess;
+
+    // allow intrMitigateValue to change on the fly...
+	if (OSNumber* num = OSDynamicCast(OSNumber, dict->getObject(kIntrMitigateName))) {
+		intrMitigateValue = (int)num->unsigned16BitValue();
+        setProperty(kIntrMitigateName, intrMitigateValue, 16);
+        WriteReg16(IntrMitigate, intrMitigateValue);
+    }
+    return kIOReturnSuccess;
+}
+
+IOReturn RTL8111::setProperties(OSObject* props)
+{
+    if (commandGate) {
+        // syncronize through workloop...
+        IOReturn result = commandGate->runAction(OSMemberFunctionCast(IOCommandGate::Action, this, &RTL8111::setPropertiesGated), props);
+        if (kIOReturnSuccess != result)
+            return result;
+    }
+    return kIOReturnSuccess;
+    //return super::setProperties(props);
 }
 
 /* Power Management Support */
