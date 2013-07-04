@@ -1391,7 +1391,7 @@ void RTL8111::txInterrupt()
     }
     if (stalled && (txNumFreeDesc > kMaxSegs)) {
         DebugLog("Ethernet [RealtekRTL8111]: Restart stalled queue!\n");
-        txQueue->service();
+        txQueue->service(IOBasicOutputQueue::kServiceAsync);
         stalled = false;
     }
     if (oldDirtyIndex != txDirtyDescIndex)
@@ -1427,7 +1427,7 @@ void RTL8111::rxInterrupt()
         }
         
         descStatus2 = OSSwapLittleToHostInt32(desc->opts2);
-        pktSize = (descStatus1 & 0x1fff);
+        pktSize = (descStatus1 & 0x1fff) - kIOEthernetCRCSize;
         bufPkt = rxMbufArray[rxNextDescIndex];
         vlanTag = (descStatus2 & RxVlanTag) ? OSSwapInt16(descStatus2 & 0xffff) : 0;
         //DebugLog("rxInterrupt(): descStatus1=0x%x, descStatus2=0x%x, pktSize=%u\n", descStatus1, descStatus2, pktSize);
@@ -1481,6 +1481,20 @@ void RTL8111::rxInterrupt()
         netif->flushInputQueue();
     
     //etherStats->dot3RxExtraEntry.interrupts++;
+}
+
+void RTL8111::dumpTallyCounter()
+{
+    UInt32 cmd;
+    
+    /* Some chips are unable to dump the tally counter while the receiver is disabled. */
+    if (ReadReg8(ChipCmd) & CmdRxEnb) {
+        WriteReg32(CounterAddrHigh, (statPhyAddr >> 32));
+        cmd = (statPhyAddr & 0x00000000ffffffff);
+        WriteReg32(CounterAddrLow, cmd);
+        WriteReg32(CounterAddrLow, cmd | CounterDump);
+        needsUpdate = true;
+    }
 }
 
 void RTL8111::updateStatitics()
@@ -1627,7 +1641,7 @@ void RTL8111::interruptOccurred(OSObject *client, IOInterruptEventSource *src, i
     /* Rx interrupt */
     if (status & (RxOK | RxDescUnavail | RxFIFOOver))
         rxInterrupt();
-    
+
     /* Tx interrupt */
     if (status & (TxOK | TxErr | TxDescUnavail))
         txInterrupt();
@@ -1667,20 +1681,6 @@ bool RTL8111::checkForDeadlock()
         deadlockWarn = 0;
     }
     return deadlock;
-}
-
-void RTL8111::dumpTallyCounter()
-{
-    UInt32 cmd;
-    
-    /* Some chips are unable to dump the tally counter while the receiver is disabled. */
-    if (ReadReg8(ChipCmd) & CmdRxEnb) {
-        WriteReg32(CounterAddrHigh, (statPhyAddr >> 32));
-        cmd = (statPhyAddr & 0x00000000ffffffff);
-        WriteReg32(CounterAddrLow, cmd);
-        WriteReg32(CounterAddrLow, cmd | CounterDump);
-        needsUpdate = true;
-    }
 }
 
 #pragma mark --- hardware specific methods ---
