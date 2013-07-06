@@ -24,10 +24,11 @@
 #define PRIVATE __attribute__((visibility("hidden")))
 
 #ifdef DEBUG
-#define DebugLog(args...) IOLog(args)
+#define DebugLog(args...) IOLog("Ethernet [RealtekRTL8111]: " args)
 #else
 #define DebugLog(args...) 
 #endif
+#define AlwaysLog(args...) IOLog("Ethernet [RealtekRTL8111]: " args)
 
 #define	RELEASE(x)	if(x){(x)->release();(x)=NULL;}
 
@@ -266,12 +267,12 @@ private:
     PRIVATE void setOffset79(UInt8 setting);
     PRIVATE void restartRTL8111();
         
-    IOReturn setPropertiesGated(OSObject* props);
+    PRIVATE IOReturn setPropertiesGated(OSObject* props);
 
-    /* Raw interrupt handler */
 #if CLEAR_STATUS_IN_INTERRUPT
-    static void rawInterruptHandler(OSObject*, void* refCon, IOService*, int);
-    void handleInterrupt();
+    /* Raw interrupt handler */
+    PRIVATE static void rawInterruptHandler(OSObject*, void* refCon, IOService*, int);
+    PRIVATE void handleInterrupt();
     volatile UInt16 _status;
     int _msiIndex;
 #endif
