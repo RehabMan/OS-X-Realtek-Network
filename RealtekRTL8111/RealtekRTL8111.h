@@ -97,7 +97,7 @@ typedef struct RtlStatData {
 	UInt16	txUnderun;
 } RtlStatData;
 
-#define kTransmitQueueCapacity  1024
+#define kTransmitQueueCapacity  4096
 
 /* With up to 40 segments we should be on the save side. */
 #define kMaxSegs 40
@@ -119,6 +119,9 @@ typedef struct RtlStatData {
 
 /* statitics timer period in ms. */
 #define kTimeoutMS 1000
+
+/* Treshhold value in ns for the modified interrupt sequence. */
+#define kFastIntrTreshhold 200000
 
 /* transmitter deadlock treshhold in seconds. */
 #define kTxDeadlockTreshhold 3
@@ -307,7 +310,6 @@ private:
     volatile void *baseAddr;
     
     /* transmitter data */
-    mbuf_t txMbufArray[kNumTxDesc];
     mbuf_t txNext2FreeMbuf;
     IOBufferMemoryDescriptor *txBufDesc;
     IOPhysicalAddress64 txPhyAddr;
@@ -318,9 +320,10 @@ private:
     UInt32 txNextDescIndex;
     UInt32 txDirtyDescIndex;
     SInt32 txNumFreeDesc;
+    //UInt32 txIntrCount;
+    //UInt32 txIntrRate;
 
     /* receiver data */
-    mbuf_t rxMbufArray[kNumRxDesc];
     IOBufferMemoryDescriptor *rxBufDesc;
     IOPhysicalAddress64 rxPhyAddr;
     struct RtlDmaDesc *rxDescArray;
@@ -329,7 +332,7 @@ private:
     UInt32 rxNextDescIndex;
     UInt32 rxConfigReg;
     UInt32 rxConfigMask;
-    
+
     /* power management data */
     unsigned long powerState;
     
@@ -351,6 +354,7 @@ private:
     struct IOEthernetAddress currMacAddr;
     struct IOEthernetAddress origMacAddr;
     
+    UInt64 lastIntrTime;
     UInt16 intrMask;
     UInt16 intrMitigateValue;
     
@@ -367,4 +371,8 @@ private:
     bool revisionC;
     bool enableTSO4;
     bool enableCSO6;
+    
+    /* mbuf_t arrays */
+    mbuf_t txMbufArray[kNumTxDesc];
+    mbuf_t rxMbufArray[kNumRxDesc];
 };

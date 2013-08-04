@@ -128,6 +128,9 @@ bool RTL8111::init(OSDictionary *properties)
         linuxData.pci_dev = &pciDeviceData;
         unitNumber = 0;
         intrMitigateValue = 0x5f51;
+        //txIntrCount = 0;
+        //txIntrRate = 0;
+        lastIntrTime = 0;
         wolCapable = false;
         wolActive = false;
         enableTSO4 = false;
@@ -1200,7 +1203,7 @@ bool RTL8111::setupDMADescriptors()
     }
     txNextDescIndex = txDirtyDescIndex = 0;
     txNumFreeDesc = kNumTxDesc;
-    txMbufCursor = IOMbufNaturalMemoryCursor::withSpecification(PAGE_SIZE, kIOPacketBufferAlign1);
+    txMbufCursor = IOMbufNaturalMemoryCursor::withSpecification(0x4000, kMaxSegs);
     
     if (!txMbufCursor) {
         AlwaysLog("Ethernet [RealtekRTL8111]: Couldn't create txMbufCursor.\n");
@@ -1231,7 +1234,7 @@ bool RTL8111::setupDMADescriptors()
     }
     rxNextDescIndex = 0;
     
-    rxMbufCursor = IOMbufNaturalMemoryCursor::withSpecification(PAGE_SIZE, kIOPacketBufferAlign8);
+    rxMbufCursor = IOMbufNaturalMemoryCursor::withSpecification(PAGE_SIZE, 1);
     
     if (!rxMbufCursor) {
         AlwaysLog("Ethernet [RealtekRTL8111]: Couldn't create rxMbufCursor.\n");
@@ -1699,7 +1702,9 @@ void RTL8111::handleInterrupt()
 
 void RTL8111::interruptOccurred(OSObject *client, IOInterruptEventSource *src, int count)
 {
+    UInt64 time, abstime;
 	UInt16 status;
+    UInt16 rxMask;
     
 #if CLEAR_STATUS_IN_INTERRUPT
     if (useMSI) {
@@ -1720,11 +1725,17 @@ void RTL8111::interruptOccurred(OSObject *client, IOInterruptEventSource *src, i
     if ((status == 0xFFFF) || !status)
         goto done;
     
+    /* Calculate time since last interrupt. */
+    clock_get_uptime(&abstime);
+    absolutetime_to_nanoseconds(abstime, &time);
+    rxMask = ((time - lastIntrTime) < kFastIntrTreshhold) ? (RxOK | RxDescUnavail | RxFIFOOver) : (RxOK | RxDescUnavail | RxFIFOOver | TxOK);
+    lastIntrTime = time;
+    
     if (status & SYSErr)
         pciErrorInterrupt();
     
     /* Rx interrupt */
-    if (status & (RxOK | RxDescUnavail | RxFIFOOver))
+    if (status & rxMask)
         rxInterrupt();
 
     /* Tx interrupt */
@@ -2040,7 +2051,8 @@ void RTL8111::setLinkDown()
 {
     deadlockWarn = 0;
     needsUpdate = false;
-    
+    //txIntrRate = 0;
+
     /* Update link status. */
     linkUp = false;
     setLinkStatus(kIONetworkLinkValid);
@@ -3310,8 +3322,22 @@ void RTL8111::setOffset79(UInt8 setting)
 
 void RTL8111::timerActionRTL8111C(IOTimerEventSource *timer)
 {
+    /*
+    UInt32 count1, count2;
+    static UInt32 txIntrCount = 0;
+    static UInt32 rxIntrCount = 0;
+    */
     //DebugLog("timerActionRTL8111C() ===>\n");
     
+    /* Calculate the transmitter and receiver interrupt rate.*/
+    /*
+    count1 = etherStats->dot3TxExtraEntry.interrupts;
+    count2 = etherStats->dot3RxExtraEntry.interrupts;
+    
+    IOLog("Ethernet [RealtekRTL8111]: Interrupt rate: tx=%u, rx=%u.\n", count1 - txIntrCount, count2 - rxIntrCount);
+    txIntrCount = count1;
+    rxIntrCount = count2;
+    */
     if (!linkUp) {
         DebugLog("Timer fired while link down.\n");
         goto done;
@@ -3343,9 +3369,23 @@ void RTL8111::timerActionRTL8111B(IOTimerEventSource *timer)
 {
 	UInt8 currLinkState;
     bool newLinkState;
+    /*
+    UInt32 count1, count2;
+    static UInt32 txIntrCount = 0;
+    static UInt32 rxIntrCount = 0;
+    */
+    //DebugLog("timerActionRTL8111C() ===>\n");
     
-    //DebugLog("timerActionRTL8111B() ===>\n");
-    
+    /* Calculate the transmitter and receiver interrupt rate.*/
+    /*
+    count1 = etherStats->dot3TxExtraEntry.interrupts;
+    count2 = etherStats->dot3RxExtraEntry.interrupts;
+     
+    IOLog("Ethernet [RealtekRTL8111]: Interrupt rate: tx=%u, rx=%u.\n", count1 - txIntrCount, count2 - rxIntrCount);
+    txIntrCount = count1;
+    rxIntrCount = count2;
+    */
+
     currLinkState = ReadReg8(PHYstatus);
 	newLinkState = (currLinkState & LinkStatus) ? true : false;
     
