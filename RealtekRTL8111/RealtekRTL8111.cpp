@@ -545,12 +545,12 @@ UInt32 RTL8111::outputPacket(mbuf_t m, void *param)
     UInt32 result = kIOReturnOutputDropped;
     mbuf_tso_request_flags_t tsoFlags;
     mbuf_csum_request_flags_t checksums;
-    UInt32 mssValue;
+    u_int32_t mssValue;
     UInt32 cmd;
     UInt32 opts1;
     UInt32 opts2;
     UInt32 vlanTag;
-    UInt32 csumData;
+    u_int32_t csumData;
     UInt32 numSegs;
     UInt32 lastSeg;
     UInt32 index;
