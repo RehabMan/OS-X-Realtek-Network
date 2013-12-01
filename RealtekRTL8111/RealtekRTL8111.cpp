@@ -97,7 +97,6 @@ bool RTL8111::init(OSDictionary *properties)
         txQueue = NULL;
         interruptSource = NULL;
         timerSource = NULL;
-        txLock = NULL;
         netif = NULL;
         netStats = NULL;
         etherStats = NULL;
@@ -165,11 +164,6 @@ void RTL8111::free()
     }
     RELEASE(commandGate);
     RELEASE(txQueue);
-
-    if (txLock) {
-        IOLockFree(txLock);
-        txLock = NULL;
-    }
     RELEASE(mediumDict);
     
     for (i = MEDIUM_INDEX_AUTO; i < MEDIUM_INDEX_COUNT; i++)
@@ -259,12 +253,6 @@ bool RTL8111::start(IOService *provider)
         AlwaysLog("Ethernet [RealtekRTL8111]: Failed to setup medium dictionary.\n");
         goto error2;
     }
-    
-    txLock = IOLockAlloc();
-    
-    if (!txLock) {
-        goto error2;
-    }
     commandGate = getCommandGate();
     
     if (!commandGate) {
@@ -274,15 +262,15 @@ bool RTL8111::start(IOService *provider)
     commandGate->retain();
     
     if (!initEventSources(provider)) {
-        AlwaysLog("Ethernet [RealtekRTL8111]: initEventSources() failed.\n");
-        goto error4;
+        IOLog("Ethernet [RealtekRTL8111]: initEventSources() failed.\n");
+        goto error3;
     }
     
     result = attachInterface(reinterpret_cast<IONetworkInterface**>(&netif));
 
     if (!result) {
-        AlwaysLog("Ethernet [RealtekRTL8111]: attachInterface() failed.\n");
-        goto error4;
+        IOLog("Ethernet [RealtekRTL8111]: attachInterface() failed.\n");
+        goto error3;
     }
     pciDevice->close(this);
     registerService();
@@ -291,13 +279,9 @@ bool RTL8111::start(IOService *provider)
 done:
     return result;
 
-error4:
-    RELEASE(commandGate);
-    
 error3:
-    IOLockFree(txLock);
-    txLock = NULL;
-    
+    RELEASE(commandGate);
+        
 error2:
     pciDevice->close(this);
     
@@ -329,11 +313,6 @@ void RTL8111::stop(IOService *provider)
     }
     RELEASE(commandGate);
     RELEASE(txQueue);
-    
-    if (txLock) {
-        IOLockFree(txLock);
-        txLock = NULL;
-    }
     RELEASE(mediumDict);
     
     for (i = MEDIUM_INDEX_AUTO; i < MEDIUM_INDEX_COUNT; i++)
@@ -503,6 +482,10 @@ IOReturn RTL8111::disable(IONetworkInterface *netif)
     if (!isEnabled)
         goto done;
 
+    txQueue->stop();
+    txQueue->flush();
+    txQueue->setCapacity(0);
+
     timerSource->cancelTimeout();
     needsUpdate = false;
     txDescDoneCount = txDescDoneLast = 0;
@@ -516,9 +499,6 @@ IOReturn RTL8111::disable(IONetworkInterface *netif)
 #endif
     }
 
-    txQueue->stop();
-    txQueue->setCapacity(0);
-    txQueue->flush();
     disableRTL8111();
 
     setLinkStatus(kIONetworkLinkValid);
@@ -557,43 +537,27 @@ UInt32 RTL8111::outputPacket(mbuf_t m, void *param)
     UInt32 i;
     
     //DebugLog("outputPacket() ===>\n");
-    
+
     if (!(isEnabled && linkUp)) {
-        DebugLog("Interface down. Dropping packet.\n");
-        goto error1;
+        DebugLog("Ethernet [RealtekRTL8111]: Interface down. Dropping packet.\n");
+        goto error;
     }
-    
-    if (!IOLockTryLock(txLock)) {
-        DebugLog("Couldn't aquire txLock. Dropping packet.\n");
-        goto error1;
-    }
-    
-    if (mbuf_get_tso_requested(m, &tsoFlags, &mssValue)) {
-        DebugLog("mbuf_get_tso_requested() failed. Dropping packet.\n");
-        goto error2;
-    }
-    mbuf_get_csum_requested(m, &checksums, &csumData);
-
-#ifdef DEBUG
-    if (!tsoFlags) {
-        if (checksums & (kChecksumTCPIPv6 | kChecksumUDPIPv6)) {
-            mssValue = findL4Header(m, (checksums & kChecksumTCPIPv6) ? IPPROTO_TCP : IPPROTO_UDP);
-
-            if (mssValue != kMinL4HdrOffset)
-                AlwaysLog("Ethernet [RealtekRTL8111]: L4 header offset=%u.\n", mssValue);
-
-            if (!mssValue)
-                goto error2;
-        }        
-    }
-#endif
-
     numSegs = txMbufCursor->getPhysicalSegmentsWithCoalesce(m, &txSegments[0], kMaxSegs);
     
     if (!numSegs) {
         DebugLog("getPhysicalSegmentsWithCoalesce() failed. Dropping packet.\n");
         etherStats->dot3TxExtraEntry.resourceErrors++;
-        goto error2;
+        goto error;
+    }
+    if (mbuf_get_tso_requested(m, &tsoFlags, &mssValue)) {
+        DebugLog("Ethernet [RealtekRTL8111]: mbuf_get_tso_requested() failed. Dropping packet.\n");
+        goto error;
+    }
+    if (tsoFlags && (mbuf_pkthdr_len(m) <= ETH_FRAME_LEN)) {
+        checksums = (tsoFlags & MBUF_TSO_IPV4) ? (kChecksumTCP | kChecksumIP): kChecksumTCPIPv6;
+        tsoFlags = 0;
+    } else {
+        mbuf_get_csum_requested(m, &checksums, &csumData);
     }
     /* Alloc required number of descriptors. As the descriptor which has been freed last must be
      * considered to be still in use we never fill the ring completely but leave at least one
@@ -603,12 +567,12 @@ UInt32 RTL8111::outputPacket(mbuf_t m, void *param)
         DebugLog("Not enough descriptors. Stalling.\n");
         result = kIOReturnOutputStall;
         stalled = true;
-        goto unlock;
+        goto done;
     }
     OSAddAtomic(-numSegs, &txNumFreeDesc);
     index = txNextDescIndex;
     txNextDescIndex = (txNextDescIndex + numSegs) & kTxDescMask;
-    firstDesc = desc = &txDescArray[index];
+    firstDesc = &txDescArray[index];
     lastSeg = numSegs - 1;
     cmd = 0;
     
@@ -641,22 +605,18 @@ UInt32 RTL8111::outputPacket(mbuf_t m, void *param)
         ++index &= kTxDescMask;
     }
     firstDesc->opts1 |= DescOwn;
-    
+
     /* Set the polling bit. */
     WriteReg8(TxPoll, NPQ);
     
-unlock:
-    IOLockUnlock(txLock);
-    
+    result = kIOReturnOutputSuccess;
+
 done:
     //DebugLog("outputPacket() <===\n");
     
     return result;
-    
-error2:
-    IOLockUnlock(txLock);
-    
-error1:
+        
+error:
     freePacket(m);
     goto done;
 }
@@ -1538,41 +1498,6 @@ void RTL8111::rxInterrupt()
     //etherStats->dot3RxExtraEntry.interrupts++;
 }
 
-void RTL8111::dumpTallyCounter()
-{
-    UInt32 cmd;
-    
-    /* Some chips are unable to dump the tally counter while the receiver is disabled. */
-    if (ReadReg8(ChipCmd) & CmdRxEnb) {
-        WriteReg32(CounterAddrHigh, (statPhyAddr >> 32));
-        cmd = (statPhyAddr & 0x00000000ffffffff);
-        WriteReg32(CounterAddrLow, cmd);
-        WriteReg32(CounterAddrLow, cmd | CounterDump);
-        needsUpdate = true;
-    }
-}
-
-void RTL8111::updateStatitics()
-{
-    UInt32 sgColl, mlColl;
-    
-    needsUpdate = false;
-    netStats->inputPackets = OSSwapLittleToHostInt64(statData->rxPackets) & 0x00000000ffffffff;
-    netStats->inputErrors = OSSwapLittleToHostInt32(statData->rxErrors);
-    netStats->outputPackets = OSSwapLittleToHostInt64(statData->txPackets) & 0x00000000ffffffff;
-    netStats->outputErrors = OSSwapLittleToHostInt32(statData->txErrors);
-
-    sgColl = OSSwapLittleToHostInt32(statData->txOneCollision);
-    mlColl = OSSwapLittleToHostInt32(statData->txMultiCollision);
-    netStats->collisions = sgColl + mlColl;
-
-    etherStats->dot3StatsEntry.singleCollisionFrames = sgColl;
-    etherStats->dot3StatsEntry.multipleCollisionFrames = mlColl;
-    etherStats->dot3StatsEntry.alignmentErrors = OSSwapLittleToHostInt16(statData->alignErrors);
-    etherStats->dot3StatsEntry.missedFrames = OSSwapLittleToHostInt16(statData->rxMissed);
-    etherStats->dot3TxExtraEntry.underruns = OSSwapLittleToHostInt16(statData->txUnderun);
-}
-
 void RTL8111::checkLinkStatus()
 {
     struct rtl8168_private *tp = &linuxData;
@@ -1757,14 +1682,22 @@ bool RTL8111::checkForDeadlock()
 {
     bool deadlock = false;
     
-    if ((txDescDoneCount == txDescDoneLast) && (txNumFreeDesc < kNumTxDesc)) {
-        if (++deadlockWarn >= kTxDeadlockTreshhold) {
+    if ((txDescDoneCount == txDescDoneLast) && (txNumFreeDesc < kNumTxDesc)) {        
+        if (++deadlockWarn == kTxCheckTreshhold) {
+            /* Some members of the RTL8111 family seem to be prone to lose transmitter rinterrupts.
+             * In order to avoid false positives when trying to detect transmitter deadlocks, check
+             * the transmitter ring once for completed descriptors before we assume a deadlock. 
+             */
+            IOLog("Ethernet [RealtekRTL8111]: Tx timeout. Lost interrupt?\n");
+            etherStats->dot3TxExtraEntry.timeouts++;
+            txInterrupt();
+        } else if (deadlockWarn >= kTxDeadlockTreshhold) {
 #ifdef DEBUG
             UInt32 i, index;
             
             for (i = 0; i < 10; i++) {
-                index = ((txDirtyDescIndex - 5 + i) & kTxDescMask);
-                AlwaysLog("Ethernet [RealtekRTL8111]: desc[%u]: opts1=0x%x, opts2=0x%x, addr=0x%llx.\n", index, txDescArray[index].opts1, txDescArray[index].opts2, txDescArray[index].addr);
+                index = ((txDirtyDescIndex - 1 + i) & kTxDescMask);
+                IOLog("Ethernet [RealtekRTL8111]: desc[%u]: opts1=0x%x, opts2=0x%x, addr=0x%llx.\n", index, txDescArray[index].opts1, txDescArray[index].opts2, txDescArray[index].addr);
             }
 #endif
             AlwaysLog("Ethernet [RealtekRTL8111]: Tx stalled? Resetting chipset. ISR=0x%x, IMR=0x%x.\n", ReadReg16(IntrStatus), ReadReg16(IntrMask));
@@ -1779,62 +1712,6 @@ bool RTL8111::checkForDeadlock()
 }
 
 #pragma mark --- hardware specific methods ---
-
-#ifdef DEBUG
-
-UInt32 RTL8111::findL4Header(mbuf_t m, UInt8 protocol)
-{
-    UInt32 headerLength = (UInt32)mbuf_pkthdr_len(m);
-    UInt32 offset = kMinL4HdrOffset;
-    UInt8 headerData[2];
-    
-    mbuf_copydata(m, kNextHdrOffset, 1, headerData);
-    
-    while (headerData[0] != protocol) {
-        mbuf_copydata(m, offset, 2, headerData);
-        offset += (headerData[1] + 1) << 3;
-
-        if ((offset >= headerLength) || (offset > L4OffMask))
-            return 0;
-    }
-    return offset;
-}
-
-void RTL8111::getDescCommand(UInt32 *cmd1, UInt32 *cmd2, mbuf_csum_request_flags_t checksums, UInt32 mssValue, mbuf_tso_request_flags_t tsoFlags)
-{
-    if (revisionC) {
-        if (tsoFlags & MBUF_TSO_IPV4) {
-            *cmd2 |= (((mssValue & MSSMask) << MSSShift_C) | TxIPCS_C | TxTCPCS_C);
-            *cmd1 = LargeSend;
-        } else {
-            if (checksums & kChecksumTCP)
-                *cmd2 |= (TxIPCS_C | TxTCPCS_C);
-            else if (checksums & kChecksumUDP)
-                *cmd2 |= (TxIPCS_C | TxUDPCS_C);
-            else if (checksums & kChecksumIP)
-                *cmd2 |= TxIPCS_C;
-            else if (checksums & kChecksumTCPIPv6)
-                *cmd2 |= (TxTCPCS_C | TxIPV6_C | ((mssValue & L4OffMask) << MSSShift_C));
-            else if (checksums & kChecksumUDPIPv6)
-                *cmd2 |= (TxUDPCS_C | TxIPV6_C | ((mssValue & L4OffMask) << MSSShift_C));
-        }
-    } else {
-        if (tsoFlags & MBUF_TSO_IPV4) {
-            /* This is a TSO operation so that there are no checksum command bits. */
-            *cmd1 = (LargeSend |((mssValue & MSSMask) << MSSShift));
-        } else {
-            /* Setup the checksum command bits. */
-            if (checksums & kChecksumTCP)
-                *cmd1 = (TxIPCS | TxTCPCS);
-            else if (checksums & kChecksumUDP)
-                *cmd1 = (TxIPCS | TxUDPCS);
-            else if (checksums & kChecksumIP)
-                *cmd1 = TxIPCS;
-        }
-    }
-}
-
-#else
 
 void RTL8111::getDescCommand(UInt32 *cmd1, UInt32 *cmd2, mbuf_csum_request_flags_t checksums, UInt32 mssValue, mbuf_tso_request_flags_t tsoFlags)
 {
@@ -1869,8 +1746,6 @@ void RTL8111::getDescCommand(UInt32 *cmd1, UInt32 *cmd2, mbuf_csum_request_flags
         }
     }
 }
-
-#endif
 
 #ifdef DEBUG
 
@@ -2053,17 +1928,52 @@ void RTL8111::setLinkDown()
     needsUpdate = false;
     //txIntrRate = 0;
 
+    /* Stop txQueue. */
+    txQueue->stop();
+    txQueue->flush();
+
     /* Update link status. */
     linkUp = false;
     setLinkStatus(kIONetworkLinkValid);
     
-    /* Stop txQueue and cleanup descriptor ring. */
-    txQueue->stop();
-    txQueue->flush();
-    IOLockLock(txLock);
+    /* Cleanup descriptor ring. */
     txClearDescriptors(false);
-    IOLockUnlock(txLock);
-    AlwaysLog("Ethernet [RealtekRTL8111]: Link down on en%u\n", (unsigned int)unitNumber);
+    IOLog("Ethernet [RealtekRTL8111]: Link down on en%u\n", unitNumber);
+}
+
+void RTL8111::dumpTallyCounter()
+{
+    UInt32 cmd;
+    
+    /* Some chips are unable to dump the tally counter while the receiver is disabled. */
+    if (ReadReg8(ChipCmd) & CmdRxEnb) {
+        WriteReg32(CounterAddrHigh, (statPhyAddr >> 32));
+        cmd = (statPhyAddr & 0x00000000ffffffff);
+        WriteReg32(CounterAddrLow, cmd);
+        WriteReg32(CounterAddrLow, cmd | CounterDump);
+        needsUpdate = true;
+    }
+}
+
+void RTL8111::updateStatitics()
+{
+    UInt32 sgColl, mlColl;
+    
+    needsUpdate = false;
+    netStats->inputPackets = OSSwapLittleToHostInt64(statData->rxPackets) & 0x00000000ffffffff;
+    netStats->inputErrors = OSSwapLittleToHostInt32(statData->rxErrors);
+    netStats->outputPackets = OSSwapLittleToHostInt64(statData->txPackets) & 0x00000000ffffffff;
+    netStats->outputErrors = OSSwapLittleToHostInt32(statData->txErrors);
+    
+    sgColl = OSSwapLittleToHostInt32(statData->txOneCollision);
+    mlColl = OSSwapLittleToHostInt32(statData->txMultiCollision);
+    netStats->collisions = sgColl + mlColl;
+    
+    etherStats->dot3StatsEntry.singleCollisionFrames = sgColl;
+    etherStats->dot3StatsEntry.multipleCollisionFrames = mlColl;
+    etherStats->dot3StatsEntry.alignmentErrors = OSSwapLittleToHostInt16(statData->alignErrors);
+    etherStats->dot3StatsEntry.missedFrames = OSSwapLittleToHostInt16(statData->rxMissed);
+    etherStats->dot3TxExtraEntry.underruns = OSSwapLittleToHostInt16(statData->txUnderun);
 }
 
 #pragma mark --- hardware initialization methods ---
@@ -2253,19 +2163,15 @@ void RTL8111::enableRTL8111()
 void RTL8111::disableRTL8111()
 {
     struct rtl8168_private *tp = &linuxData;
-    
-    IOLockLock(txLock);
-    
+        
 	rtl8168_dsm(tp, DSM_IF_DOWN);
     rtl8168_hw_reset(tp);
     rtl8168_sleep_rx_enable(tp);
 	rtl8168_powerdown_pll(tp);
-    
-    IOLockUnlock(txLock);
 }
 
 /* Reset the NIC in case a tx deadlock or a pci error occurred. timerSource and txQueue
- * are stopped immediately but will be restarted bycheckLinkStatus() when the link has 
+ * are stopped immediately but will be restarted by checkLinkStatus() when the link has
  * been reestablished.
  */
 
@@ -2276,10 +2182,7 @@ void RTL8111::restartRTL8111()
     txQueue->flush();
     linkUp = false;
     setLinkStatus(kIONetworkLinkValid);
-    
-    /* Lock the transmitter. */
-    IOLockLock(txLock);
-    
+        
     /* Reset NIC and cleanup both descriptor rings. */
     rtl8168_nic_reset(&linuxData);
     txClearDescriptors(true);
@@ -2287,9 +2190,8 @@ void RTL8111::restartRTL8111()
     rxNextDescIndex = 0;
     deadlockWarn = 0;
     
-    /* Reinitialize NIC and release txLock. */
+    /* Reinitialize NIC. */
     enableRTL8111();
-    IOLockUnlock(txLock);
 }
 
 void RTL8111::startRTL8111()
@@ -2330,7 +2232,7 @@ void RTL8111::startRTL8111()
     
     WriteReg8(MTPS, Reserved1_data);
     
-    tp->cp_cmd |= PktCntrDisable | INTT_1 | PCIDAC;
+    tp->cp_cmd |= PktCntrDisable | INTT_1;
     WriteReg16(CPlusCmd, tp->cp_cmd);
     
     /* The original value 0x5f51 seems to cause performance issues with SMB. */
@@ -3245,7 +3147,7 @@ void RTL8111::startRTL8111()
         //rtl8168_set_rxbufsize(tp, dev);
     }
         
-    tp->cp_cmd |= (RxChkSum|RxVlan|PCIDAC);
+    tp->cp_cmd |= (RxChkSum|RxVlan);
 	WriteReg16(CPlusCmd, tp->cp_cmd);
 	ReadReg16(CPlusCmd);
     

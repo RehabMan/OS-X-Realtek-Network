@@ -125,12 +125,13 @@ typedef struct RtlStatData {
 
 /* transmitter deadlock treshhold in seconds. */
 #define kTxDeadlockTreshhold 3
+#define kTxCheckTreshhold (kTxDeadlockTreshhold - 1)
 
 /* IPv6 specific stuff */
 #define kNextHdrOffset 20
 #define kMinL4HdrOffset 54
 
-/* This definition should have been in IOPCIDevice.h. */
+/* This definitions should have been in IOPCIDevice.h. */
 enum
 {
     kIOPCIPMCapability = 2,
@@ -283,10 +284,6 @@ private:
     /* Hardware specific methods */
     PRIVATE void getDescCommand(UInt32 *cmd1, UInt32 *cmd2, mbuf_csum_request_flags_t checksums, UInt32 mssValue, mbuf_tso_request_flags_t tsoFlags);
     PRIVATE void getChecksumResult(mbuf_t m, UInt32 status1, UInt32 status2);
-
-#ifdef DEBUG
-    UInt32 findL4Header(mbuf_t m, UInt8 protocol);
-#endif
     
     /* RTL8111C specific methods */
     PRIVATE void timerActionRTL8111C(IOTimerEventSource *timer);
@@ -304,7 +301,6 @@ private:
 	
 	IOInterruptEventSource *interruptSource;
 	IOTimerEventSource *timerSource;
-	IOLock *txLock;
 	IOEthernetInterface *netif;
 	IOMemoryMap *baseMap;
     volatile void *baseAddr;
