@@ -101,14 +101,19 @@ module_param(eee_enable, int, S_IRUGO);
 #endif /* DISABLED_CODE */
 
 /* Maximum events (Rx packets, etc.) to handle at each interrupt. */
-static const int max_interrupt_work = 20;
+////static const int max_interrupt_work = 20;
 
 /* Maximum number of multicast addresses to filter (vs. Rx-all-multicast).
  The RTL chips use a 64 element hash table based on the Ethernet CRC. */
-static const int multicast_filter_limit = 32;
+////static const int multicast_filter_limit = 32;
 
+#ifdef __LP64__
 #define _R(NAME,MAC,RCR,MASK, JumFrameSz) \
 { .name = NAME, .mcfg = MAC, .RCR_Cfg = RCR, .RxConfigMask = MASK, .jumbo_frame_sz = JumFrameSz }
+#else
+#define _R(NAME,MAC,RCR,MASK, JumFrameSz) \
+{ NAME, MAC, RCR, MASK, JumFrameSz }
+#endif
 
 const struct RTLChipInfo rtl_chip_info[] = {
     _R("RTL8168B/8111B",
