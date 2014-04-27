@@ -21,7 +21,11 @@ sudo rm -rf /System/Library/Extensions/IONetworkingFamily.kext/Contents/PlugIns/
 
 ### Downloads:
 
-Downloads are available on Google Code:
+Downloads are available on Bitbucket:
+
+https://bitbucket.org/RehabMan/os-x-realtek-network/downloads
+
+Note: Archived (old) downloads are available on Google Code:
 
 https://code.google.com/p/os-x-realtek-network/downloads/list
 
