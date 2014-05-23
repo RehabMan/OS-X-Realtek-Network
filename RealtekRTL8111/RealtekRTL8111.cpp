@@ -22,6 +22,15 @@
 
 #include "RealtekRTL8111.h"
 
+//REVIEW: avoids problem with Xcode 5.1.0 where -dead_strip eliminates these required symbols
+#include <libkern/OSKextLib.h>
+void* _org_rehabman_dontstrip_[] =
+{
+    (void*)&OSKextGetCurrentIdentifier,
+    (void*)&OSKextGetCurrentLoadTag,
+    (void*)&OSKextGetCurrentVersionString,
+};
+
 #pragma mark --- function prototypes ---
 
 static inline void fillDescriptorAddr(volatile void *baseAddr, IOPhysicalAddress64 txPhyAddr, IOPhysicalAddress64 rxPhyAddr);
