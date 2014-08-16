@@ -97,7 +97,7 @@ typedef struct RtlStatData {
 	UInt16	txUnderun;
 } RtlStatData;
 
-#define kTransmitQueueCapacity  4096
+#define kTransmitQueueCapacity  1024
 
 /* With up to 40 segments we should be on the save side. */
 #define kMaxSegs 40
@@ -163,6 +163,8 @@ enum
 #define kEnableCSO6Name "enableCSO6"
 #define kEnableTSO4Name "enableTSO4"
 #define kIntrMitigateName "intrMitigate"
+#define kDisableASPMName "disableASPM"
+#define kDriverVersionName "Driver_Version"
 #define kNameLenght 64
 
 extern const struct RTLChipInfo rtl_chip_info[];
@@ -255,28 +257,27 @@ private:
     PRIVATE void rxInterrupt();
     PRIVATE bool setupDMADescriptors();
     PRIVATE void freeDMADescriptors();
-    PRIVATE void txClearDescriptors(bool withReset);
+    PRIVATE void txClearDescriptors();
     PRIVATE void checkLinkStatus();
     PRIVATE void updateStatitics();
     PRIVATE void setLinkUp(UInt8 linkState);
     PRIVATE void setLinkDown();
     PRIVATE bool checkForDeadlock();
-    PRIVATE void dumpTallyCounter();
 
     /* Hardware initialization methods. */
     PRIVATE bool initRTL8111();
     PRIVATE void enableRTL8111();
     PRIVATE void disableRTL8111();
-    PRIVATE void startRTL8111();
+    PRIVATE void startRTL8111(UInt16 newIntrMitigate, bool enableInterrupts);
     PRIVATE void setOffset79(UInt8 setting);
     PRIVATE void restartRTL8111();
-        
+    
     PRIVATE UInt8 csiFun0ReadByte(UInt32 addr);
     PRIVATE void csiFun0WriteByte(UInt32 addr, UInt8 value);
     PRIVATE void disablePCIOffset99();
     PRIVATE void setPCI99_180ExitDriverPara();
     PRIVATE void hardwareD3Para();
-    
+
     PRIVATE IOReturn setPropertiesGated(OSObject* props);
 
 #if CLEAR_STATUS_IN_INTERRUPT
@@ -346,7 +347,6 @@ private:
     IOPhysicalAddress64 statPhyAddr;
     struct RtlStatData *statData;
 
-    UInt32 unitNumber;
     UInt32 mtu;
     UInt32 speed;
     UInt32 duplex;
@@ -373,6 +373,7 @@ private:
     bool revisionC;
     bool enableTSO4;
     bool enableCSO6;
+    bool disableASPM;
     
     /* mbuf_t arrays */
     mbuf_t txMbufArray[kNumTxDesc];
