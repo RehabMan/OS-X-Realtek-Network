@@ -235,6 +235,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "-fno-stack-protector";
 				"OTHER_LDFLAGS[arch=x86_64]" = "-dead_strip";
+				PRODUCT_NAME = RealtekRTL8111;
 				SDKROOT = macosx10.6;
 				SYMROOT = Build;
 			};
@@ -260,6 +261,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "-fno-stack-protector";
 				"OTHER_LDFLAGS[arch=x86_64]" = "-dead_strip";
+				PRODUCT_NAME = RealtekRTL8111;
 				SDKROOT = macosx10.6;
 				SYMROOT = Build;
 			};

@@ -26,6 +26,8 @@
 	<dict>
 		<key>RTL8111 PCIe Adapter</key>
 		<dict>
+			<key>RM,Version</key>
+			<string>${PRODUCT_NAME} ${MODULE_VERSION}</string>
 			<key>CFBundleIdentifier</key>
 			<string>com.insanelymac.${PRODUCT_NAME:rfc1034identifier}</string>
 			<key>IOClass</key>
