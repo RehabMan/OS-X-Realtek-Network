@@ -127,9 +127,11 @@ typedef struct RtlStatData {
 #define kTxDeadlockTreshhold 3
 #define kTxCheckTreshhold (kTxDeadlockTreshhold - 1)
 
+/* IPv4 specific stuff */
+#define kMinL4HdrOffsetV4 34
+
 /* IPv6 specific stuff */
-#define kNextHdrOffset 20
-#define kMinL4HdrOffset 54
+#define kMinL4HdrOffsetV6 54
 
 /* This definitions should have been in IOPCIDevice.h. */
 enum
@@ -162,6 +164,7 @@ enum
 #define kEnableEeeName "enableEEE"
 #define kEnableCSO6Name "enableCSO6"
 #define kEnableTSO4Name "enableTSO4"
+#define kEnableTSO6Name "enableTSO6"
 #define kIntrMitigateName "intrMitigate"
 #define kDisableASPMName "disableASPM"
 #define kDriverVersionName "Driver_Version"
@@ -235,9 +238,6 @@ public:
 	virtual IOReturn setMulticastMode(bool active);
 	virtual IOReturn setMulticastList(IOEthernetAddress *addrs, UInt32 count);
 	virtual IOReturn getChecksumSupport(UInt32 *checksumMask, UInt32 checksumFamily, bool isOutput);
-	virtual IOReturn setMaxPacketSize(UInt32 maxSize);
-	virtual IOReturn getMaxPacketSize(UInt32 *maxSize) const;
-	virtual IOReturn getMinPacketSize(UInt32 *minSize) const;
     virtual IOReturn setWakeOnMagicPacket(bool active);
     virtual IOReturn getPacketFilters(const OSSymbol *group, UInt32 *filters) const;
     
@@ -289,8 +289,11 @@ private:
 #endif
 
     /* Hardware specific methods */
-    PRIVATE void getDescCommand(UInt32 *cmd1, UInt32 *cmd2, mbuf_csum_request_flags_t checksums, UInt32 mssValue, mbuf_tso_request_flags_t tsoFlags);
-    PRIVATE void getChecksumResult(mbuf_t m, UInt32 status1, UInt32 status2);
+    //PRIVATE void getDescCommand(UInt32 *cmd1, UInt32 *cmd2, mbuf_csum_request_flags_t checksums, UInt32 mssValue, mbuf_tso_request_flags_t tsoFlags);
+    PRIVATE inline void getChecksumCommand(UInt32 *cmd1, UInt32 *cmd2, mbuf_csum_request_flags_t checksums);
+    PRIVATE inline void getTso4Command(UInt32 *cmd1, UInt32 *cmd2, UInt32 mssValue, mbuf_tso_request_flags_t tsoFlags);
+    PRIVATE inline void getTso6Command(UInt32 *cmd1, UInt32 *cmd2, UInt32 mssValue, mbuf_tso_request_flags_t tsoFlags);
+    PRIVATE inline void getChecksumResult(mbuf_t m, UInt32 status1, UInt32 status2);
     
     /* RTL8111C specific methods */
     PRIVATE void timerActionRTL8111C(IOTimerEventSource *timer);
@@ -323,8 +326,6 @@ private:
     UInt32 txNextDescIndex;
     UInt32 txDirtyDescIndex;
     SInt32 txNumFreeDesc;
-    //UInt32 txIntrCount;
-    //UInt32 txIntrRate;
 
     /* receiver data */
     IOBufferMemoryDescriptor *rxBufDesc;
@@ -372,6 +373,7 @@ private:
     bool wolActive;
     bool revisionC;
     bool enableTSO4;
+    bool enableTSO6;
     bool enableCSO6;
     bool disableASPM;
     

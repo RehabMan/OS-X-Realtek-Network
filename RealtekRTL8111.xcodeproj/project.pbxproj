@@ -277,7 +277,7 @@
 				GCC_PREFIX_HEADER = "RealtekRTL8111/RealtekRTL8111-Prefix.pch";
 				INFOPLIST_FILE = "RealtekRTL8111/RealtekRTL8111-Info.plist";
 				MODULE_NAME = com.insanelymac.RealtekRTL8111;
-				MODULE_VERSION = 1.2.2;
+				MODULE_VERSION = 1.2.3;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_STYLE = "non-global";
@@ -295,7 +295,7 @@
 				GCC_PREFIX_HEADER = "RealtekRTL8111/RealtekRTL8111-Prefix.pch";
 				INFOPLIST_FILE = "RealtekRTL8111/RealtekRTL8111-Info.plist";
 				MODULE_NAME = com.insanelymac.RealtekRTL8111;
-				MODULE_VERSION = 1.2.2;
+				MODULE_VERSION = 1.2.3;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_STYLE = "non-global";

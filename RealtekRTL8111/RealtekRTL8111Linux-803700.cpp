@@ -98,14 +98,13 @@
 static int eee_enable = 0 ;
 module_param(eee_enable, int, S_IRUGO);
 
-#endif /* DISABLED_CODE */
-
 /* Maximum events (Rx packets, etc.) to handle at each interrupt. */
 ////static const int max_interrupt_work = 20;
 
 /* Maximum number of multicast addresses to filter (vs. Rx-all-multicast).
  The RTL chips use a 64 element hash table based on the Ethernet CRC. */
 ////static const int multicast_filter_limit = 32;
+#endif
 
 #ifdef __LP64__
 #define _R(NAME,MAC,RCR,MASK, JumFrameSz) \

@@ -130,7 +130,7 @@ Key Features of the Driver
 - Support for multisegment packets relieving the network stack of unnecessary copy operations when assembling packets for transmission.
 - No-copy receive and transmit. Only small packets are copied on reception because creating a copy is more efficient than allocating a new buffer.
 TCP, UDP and IPv4 checksum offload (receive and transmit).
-- TCP segmentation offload under IPv4.
+- TCP segmentation offload over IPv4 and IPv6.
 - Support for TCP/IPv6 and UDP/IPv6 checksum offload.
 - Fully optimized for Mountain Lion (64bit architecture) but should work with Lion too. Snow Leopard requies some changes.
 - Supports Wake on LAN.
@@ -167,7 +167,9 @@ The driver has been successfully tested under 10.8.2 - 10.8.5 and 10.9 with the 
 
 Changelog
 
-- Version 1.2.2 (2014-08-44):
+- Version 1.2.3 (2014-08-23):
+    - Reworked TSO4 and added support for TSO6.
+- Version 1.2.2 (2014-08-14):
     - Added an option to disable ASPM (default disabled) as it seems to result in unstable operation of some chipsets.
     - Resolved a problem with Link Aggregation after reboot.
     - Added a workaround for the Multicast filter bug of chipset 17 (RTL8111F) which prevented Bonjour from working properly.
