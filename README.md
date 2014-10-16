@@ -32,7 +32,7 @@ https://code.google.com/p/os-x-realtek-network/downloads/list
 
 ### Build Environment
 
-My build environment is currently Xcode 4.62, using SDK 10.6, targeting OS X 10.6.
+My build environment is currently Xcode 6.1, using SDK 10.6, targeting OS X 10.6.
 
 This kext can be built with any of the following SDKs: 10.8, 10.7, or 10.6 but only by enabling
 the hacks previously used in the code (see DISABLE_ALL_HACKS in the source code)
@@ -75,6 +75,12 @@ http://www.insanelymac.com/forum/topic/287161-new-driver-for-realtek-rtl8111/
 
 
 ### Change Log:
+
+2014-10-16 (RehabMan)
+
+- Pulled latest changes from Mieze
+
+- Build with Xcode 6.1
 
 2013-04-25 (RehabMan)
 
