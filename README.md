@@ -122,8 +122,7 @@ My goal in creating this repository was just to create a single binary that coul
 
 ## README.md from Mieze's repository
 
-RTL8111_driver_for_OS_X
-=======================
+RTL8111 Driver for OS X
 
 OS X open source driver for the Realtek RTL8111/8168 family
 

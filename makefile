@@ -3,6 +3,7 @@
 KEXT=RealtekRTL8111.kext
 DIST=RehabMan-Realtek-Network
 INSTDIR=/System/Library/Extensions
+OPTIONS=-target RealtekRTL8111-V2
 
 ifeq ($(findstring 32,$(BITS)),32)
 OPTIONS:=$(OPTIONS) -arch i386
