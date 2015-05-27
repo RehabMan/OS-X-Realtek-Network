@@ -18,6 +18,8 @@ Special note for Snow Leopard users:  There is a conflict between the RTL8169 dr
 
 sudo rm -rf /System/Library/Extensions/IONetworkingFamily.kext/Contents/PlugIns/AppleRTL8169Ethernet.kext
 
+Note: The current v2 build supports only Mountain Lion 10.8 or newer.
+
 
 ### Downloads:
 
@@ -76,15 +78,24 @@ http://www.insanelymac.com/forum/topic/287161-new-driver-for-realtek-rtl8111/
 
 ### Change Log:
 
+2014-05-26 (RehabMan)
+
+- Pulled latest changes from Meize
+
+- Please note that the default build for this project is the v2 project which supports only 10.8+  That means versions prior to 10.8 are not supported (eg. Lion/SL).  You can still build the v1 kext if you wish.
+
+
 2014-10-16 (RehabMan)
 
 - Pulled latest changes from Mieze
 
 - Build with Xcode 6.1
 
+
 2013-04-25 (RehabMan)
 
 - Pulled latest changes from Mieze
+
 
 2013-04-17 (RehabMan)
 
@@ -118,6 +129,8 @@ Original sources came from this post on Insanely Mac:
 http://www.insanelymac.com/forum/topic/287161-new-driver-for-realtek-rtl8111/
 
 My goal in creating this repository was just to create a single binary that could be used on 10.8, 10.7, and 10.6 for use in the Probook Installer.
+
+I also added the CLEAR_STATUS_IN_INTERRUPT "feature/bugfix" which fixes some performance issues I was experiencing on my ProBook to SMB shares.  In addition, a few other changes were made to allow the code to compile on 32-bit (no idea if that is still the case).
 
 
 ## README.md from Mieze's repository
