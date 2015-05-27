@@ -32,12 +32,14 @@ update_kernelcache:
 install_debug:
 	sudo rm -Rf $(INSTDIR)/$(KEXT)
 	sudo cp -R ./Build/Debug/$(KEXT) $(INSTDIR)
+	if [ "`which tag`" != "" ]; then sudo tag -a Purple $(INSTDIR)/$(KEXT); fi
 	make update_kernelcache
 
 .PHONY: install
 install:
 	sudo rm -Rf $(INSTDIR)/$(KEXT)
 	sudo cp -R ./Build/Release/$(KEXT) $(INSTDIR)
+	if [ "`which tag`" != "" ]; then sudo tag -a Blue $(INSTDIR)/$(KEXT); fi
 	make update_kernelcache
 
 .PHONY: distribute
