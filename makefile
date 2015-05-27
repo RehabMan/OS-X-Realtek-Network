@@ -1,7 +1,7 @@
 # really just some handy scripts...
 
 KEXT=RealtekRTL8111.kext
-DIST=RehabMan-Realtek-Network
+DIST=RehabMan-Realtek-Network-v2
 INSTDIR=/System/Library/Extensions
 OPTIONS=-target RealtekRTL8111-V2
 
