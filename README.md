@@ -53,9 +53,10 @@ This project does not support 32-bit builds.  It is coded for 64-bit only.
 
 The source code is maintained at the following sites:
 
-https://code.google.com/p/os-x-realtek-network/
-
 https://github.com/RehabMan/OS-X-Realtek-Network
+
+https://bitbucket.org/RehabMan/os-x-realtek-network
+
 
 Mieze's original repository is now on github:
 
