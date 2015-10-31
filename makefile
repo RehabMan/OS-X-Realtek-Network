@@ -1,10 +1,14 @@
-# really just some handy scripts...
-
 KEXT=RealtekRTL8111.kext
 DIST=RehabMan-Realtek-Network-v2
 BUILDDIR=./Build/Products
-INSTDIR=/System/Library/Extensions
 OPTIONS=-target RealtekRTL8111-V2
+
+VERSION_ERA=$(shell ./print_version.sh)
+ifeq "$(VERSION_ERA)" "10.10-"
+	INSTDIR=/System/Library/Extensions
+else
+	INSTDIR=/Library/Extensions
+endif
 
 ifeq ($(findstring 32,$(BITS)),32)
 OPTIONS:=$(OPTIONS) -arch i386
