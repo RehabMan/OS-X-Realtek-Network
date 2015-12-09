@@ -18,7 +18,7 @@
  * This driver is based on Realtek's r8168 Linux driver (8.037.0).
  */
 
-#include "RealtekRTL8111Linux-803700.h"
+#include "RealtekRTL8111Linux-8040000.h"
 
 #define EXPORT __attribute__((visibility("default")))
 #define PRIVATE __attribute__((visibility("hidden")))
@@ -281,12 +281,6 @@ private:
     PRIVATE void setOffset79(UInt8 setting);
     PRIVATE void restartRTL8111();
     
-    PRIVATE UInt8 csiFun0ReadByte(UInt32 addr);
-    PRIVATE void csiFun0WriteByte(UInt32 addr, UInt8 value);
-    PRIVATE void disablePCIOffset99();
-    PRIVATE void setPCI99_180ExitDriverPara();
-    PRIVATE void hardwareD3Para();
-
     PRIVATE IOReturn setPropertiesGated(OSObject* props);
 
 #if CLEAR_STATUS_IN_INTERRUPT
@@ -296,6 +290,14 @@ private:
     volatile UInt16 _status;
     int _msiIndex;
 #endif
+
+    PRIVATE UInt8 csiFun0ReadByte(UInt32 addr);
+    PRIVATE void csiFun0WriteByte(UInt32 addr, UInt8 value);
+    PRIVATE void enablePCIOffset99();
+    PRIVATE void disablePCIOffset99();
+    PRIVATE void initPCIOffset99();
+    PRIVATE void setPCI99_180ExitDriverPara();
+    PRIVATE void hardwareD3Para();
 
     /* Hardware specific methods */
     //PRIVATE void getDescCommand(UInt32 *cmd1, UInt32 *cmd2, mbuf_csum_request_flags_t checksums, UInt32 mssValue, mbuf_tso_request_flags_t tsoFlags);
