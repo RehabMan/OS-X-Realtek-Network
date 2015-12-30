@@ -12,16 +12,13 @@
 		D34D36BB1AD2F62B00EEEC08 /* mii.h in Headers */ = {isa = PBXBuildFile; fileRef = D37BD69C16C6068D00C255A2 /* mii.h */; };
 		D34D36BC1AD2F62B00EEEC08 /* if_ether.h in Headers */ = {isa = PBXBuildFile; fileRef = D37BD69D16C6068D00C255A2 /* if_ether.h */; };
 		D34D36BD1AD2F62B00EEEC08 /* ethertool.h in Headers */ = {isa = PBXBuildFile; fileRef = D37BD69E16C6068D00C255A2 /* ethertool.h */; };
-		D34D36BF1AD2F62B00EEEC08 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D37BD68716C605F500C255A2 /* InfoPlist.strings */; };
 		D363E4B61BF2A04E00C8E36C /* RealtekRTL8111Linux-8040000.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D363E4B51BF2A04E00C8E36C /* RealtekRTL8111Linux-8040000.cpp */; };
 		D363E4B71BF2A04E00C8E36C /* RealtekRTL8111Linux-8040000.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D363E4B51BF2A04E00C8E36C /* RealtekRTL8111Linux-8040000.cpp */; };
-		D37BD68916C605F500C255A2 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D37BD68716C605F500C255A2 /* InfoPlist.strings */; };
 		D37BD69916C6065300C255A2 /* RealtekRTL8111.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D37BD69716C6065300C255A2 /* RealtekRTL8111.cpp */; };
 		D37BD69F16C6068D00C255A2 /* linux.h in Headers */ = {isa = PBXBuildFile; fileRef = D37BD69B16C6068D00C255A2 /* linux.h */; };
 		D37BD6A016C6068D00C255A2 /* mii.h in Headers */ = {isa = PBXBuildFile; fileRef = D37BD69C16C6068D00C255A2 /* mii.h */; };
 		D37BD6A116C6068D00C255A2 /* if_ether.h in Headers */ = {isa = PBXBuildFile; fileRef = D37BD69D16C6068D00C255A2 /* if_ether.h */; };
 		D37BD6A216C6068D00C255A2 /* ethertool.h in Headers */ = {isa = PBXBuildFile; fileRef = D37BD69E16C6068D00C255A2 /* ethertool.h */; };
-		ED4C77B11B99FA7900A60DF3 /* makefile in Sources */ = {isa = PBXBuildFile; fileRef = ED4C77B01B99FA7900A60DF3 /* makefile */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -368,6 +365,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx10.9;
+				SYMROOT = Build/Products;
 			};
 			name = Debug;
 		};
