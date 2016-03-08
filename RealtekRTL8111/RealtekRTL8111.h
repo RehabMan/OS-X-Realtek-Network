@@ -15,7 +15,7 @@
  *
  * Driver for Realtek RTL8111x PCIe ethernet controllers.
  *
- * This driver is based on Realtek's r8168 Linux driver (8.037.0).
+ * This driver is based on Realtek's r8168 Linux driver (8.041.0).
  */
 
 #include "RealtekRTL8111Linux-8040000.h"
@@ -146,7 +146,7 @@ typedef struct RtlStatData {
 #define kFastIntrTreshhold 200000
 
 /* Treshhold value to wake a stalled queue */
-#define kTxQueueWakeTreshhold (kNumTxDesc / 8)
+#define kTxQueueWakeTreshhold (kNumTxDesc / 3)
 
 /* transmitter deadlock treshhold in seconds. */
 #define kTxDeadlockTreshhold 3
@@ -195,11 +195,11 @@ enum
 #define kDriverVersionName "Driver_Version"
 #define kNameLenght 64
 
-#ifdef CONFIG_RXPOLL
+#ifdef __PRIVATE_SPI__
 
 #define kEnableRxPollName "rxPolling"
 
-#endif /* CONFIG_RXPOLL */
+#endif /* __PRIVATE_SPI__ */
 
 extern const struct RTLChipInfo rtl_chip_info[];
 
@@ -231,12 +231,8 @@ public:
 	
 #ifdef __PRIVATE_SPI__
     virtual IOReturn outputStart(IONetworkInterface *interface, IOOptionBits options );
-    
-#ifdef CONFIG_RXPOLL
     virtual IOReturn setInputPacketPollingEnable(IONetworkInterface *interface, bool enabled);
-    virtual void pollInputPackets(IONetworkInterface *interface, uint32_t maxCount, IOMbufQueue *pollQueue, void *context );
-#endif /* CONFIG_RXPOLL */
-
+    virtual void pollInputPackets(IONetworkInterface *interface, uint32_t maxCount, IOMbufQueue *pollQueue, void *context);
 #else
     virtual UInt32 outputPacket(mbuf_t m, void *param);
 #endif /* __PRIVATE_SPI__ */
@@ -296,7 +292,11 @@ private:
     PRIVATE void interruptOccurred(OSObject *client, IOInterruptEventSource *src, int count);
     PRIVATE void pciErrorInterrupt();
     PRIVATE void txInterrupt();
+#ifdef __PRIVATE_SPI__
+    PRIVATE UInt32 rxInterrupt(IONetworkInterface *interface, uint32_t maxCount, IOMbufQueue *pollQueue, void *context);
+#else
     PRIVATE void rxInterrupt();
+#endif /* __PRIVATE_SPI__ */
     PRIVATE bool setupDMADescriptors();
     PRIVATE void freeDMADescriptors();
     PRIVATE void txClearDescriptors();
@@ -409,21 +409,23 @@ private:
     UInt16 intrMask;
     UInt16 intrMitigateValue;
     
+#ifdef __PRIVATE_SPI__
+    UInt16 intrMaskRxTx;
+    UInt16 intrMaskPoll;
+
+    IONetworkPacketPollingParameters pollParams;
+
+    bool rxPoll;
+    bool polling;
+#else
+    bool stalled;
+#endif /* __PRIVATE_SPI__ */
+
     /* flags */
     bool isEnabled;
 	bool promiscusMode;
 	bool multicastMode;
     bool linkUp;
-    
-#ifdef __PRIVATE_SPI__
-    
-#ifdef CONFIG_RXPOLL
-    bool rxPoll;
-#endif /* CONFIG_RXPOLL */
-    
-#else
-    bool stalled;
-#endif /* __PRIVATE_SPI__ */
     
     bool needsUpdate;
     bool wolCapable;
