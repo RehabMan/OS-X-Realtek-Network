@@ -50,6 +50,8 @@
 			<true/>
 			<key>disableASPM</key>
 			<true/>
+			<key>rxPolling</key>
+			<false/>
 			<key>intrMitigate</key>
 			<integer>24401</integer>
 			<key>Driver_Version</key>
