@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		D34D36B61AD2F62B00EEEC08 /* RealtekRTL8111.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D37BD69716C6065300C255A2 /* RealtekRTL8111.cpp */; };
-		D34D36BF1AD2F62B00EEEC08 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D37BD68716C605F500C255A2 /* InfoPlist.strings */; };
 		D363E4B61BF2A04E00C8E36C /* RealtekRTL8111Linux-8040000.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D363E4B51BF2A04E00C8E36C /* RealtekRTL8111Linux-8040000.cpp */; };
 		D363E4B71BF2A04E00C8E36C /* RealtekRTL8111Linux-8040000.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D363E4B51BF2A04E00C8E36C /* RealtekRTL8111Linux-8040000.cpp */; };
 		D37BD69916C6065300C255A2 /* RealtekRTL8111.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D37BD69716C6065300C255A2 /* RealtekRTL8111.cpp */; };
@@ -284,6 +283,7 @@
 		D34D36C21AD2F62B00EEEC08 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_USE_OPTIMIZATION_PROFILE = NO;
 				CODE_SIGN_IDENTITY = "";
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = $MODULE_VERSION;
@@ -295,10 +295,9 @@
 				INSTALL_OWNER = "$(USER)";
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				MODULE_NAME = com.insanelymac.RealtekRTL8111;
-				MODULE_VERSION = 2.2.1d2;
+				MODULE_VERSION = 2.2.1d4;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.insanelymac.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = RealtekRTL8111;
-				SDKROOT = macosx10.9;
 				WRAPPER_EXTENSION = kext;
 			};
 			name = Debug;
@@ -306,9 +305,11 @@
 		D34D36C31AD2F62B00EEEC08 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_USE_OPTIMIZATION_PROFILE = NO;
 				CODE_SIGN_IDENTITY = "";
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = $MODULE_VERSION;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_OPTIMIZATION_LEVEL = s;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "RealtekRTL8111/RealtekRTL8111-V2-Prefix.pch";
@@ -319,10 +320,9 @@
 				LLVM_LTO = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				MODULE_NAME = com.insanelymac.RealtekRTL8111;
-				MODULE_VERSION = 2.2.1d2;
+				MODULE_VERSION = 2.2.1d4;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.insanelymac.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = RealtekRTL8111;
-				SDKROOT = macosx10.9;
 				WRAPPER_EXTENSION = kext;
 			};
 			name = Release;
@@ -350,7 +350,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = macosx10.9;
+				SDKROOT = macosx10.11;
 				SYMROOT = Build/Products;
 			};
 			name = Debug;
@@ -378,7 +378,7 @@
 				OTHER_CFLAGS = "-fno-stack-protector";
 				"OTHER_LDFLAGS[arch=x86_64]" = "-dead_strip";
 				PRODUCT_NAME = RealtekRTL8111;
-				SDKROOT = macosx10.9;
+				SDKROOT = macosx10.11;
 				SYMROOT = Build/Products;
 			};
 			name = Release;
@@ -396,7 +396,7 @@
 				INSTALL_OWNER = "$(USER)";
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				MODULE_NAME = com.insanelymac.RealtekRTL8111;
-				MODULE_VERSION = 1.4.0d1;
+				MODULE_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.insanelymac.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx10.8;
@@ -419,7 +419,7 @@
 				INSTALL_OWNER = "$(USER)";
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				MODULE_NAME = com.insanelymac.RealtekRTL8111;
-				MODULE_VERSION = 1.4.0d1;
+				MODULE_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.insanelymac.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx10.8;

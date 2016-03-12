@@ -1942,7 +1942,11 @@ void RTL8111::handleInterrupt()
 void RTL8111::interruptOccurred(OSObject *client, IOInterruptEventSource *src, int count)
 {
     UInt64 time, abstime;
+    
+#ifdef __PRIVATE_SPI__
     UInt32 packets;
+#endif /* __PRIVATE_SPI__ */
+
 	UInt16 status;
     UInt16 rxMask;
     
@@ -2355,7 +2359,7 @@ void RTL8111::setLinkUp(UInt8 linkState)
             pollParams.highThresholdPackets = 40;
             pollParams.lowThresholdBytes = 0x1000;
             pollParams.highThresholdBytes = 0x10000;
-            pollParams.pollIntervalTime = (speed == SPEED_1000) ? 200000 : 1000000;  /* 200µs / 1ms */
+            pollParams.pollIntervalTime = (speed == SPEED_1000) ? 170000 : 1000000;  /* 170µs / 1ms */
         }
         netif->setPacketPollingParameters(&pollParams, 0);
         DebugLog("Ethernet [RealtekRTL8111]: pollIntervalTime: %lluus\n", (pollParams.pollIntervalTime / 1000));
@@ -2491,10 +2495,10 @@ bool RTL8111::initPCIConfigSpace(IOPCIDevice *provider)
         pcieLinkCtl = provider->configRead16(pcieCapOffset + kIOPCIELinkControl);
         DebugLog("PCIe link capabilities: 0x%08x, link control: 0x%04x.\n", (unsigned int)pcieLinkCap, pcieLinkCtl);
         
-        if (pcieLinkCtl & (kIOPCIELinkCtlASPM | kIOPCIELinkCtlClkReqEn)) {
+        if (pcieLinkCtl & kIOPCIELinkCtlASPM) {
             if (disableASPM) {
                 IOLog("Ethernet [RealtekRTL8111]: Disable PCIe ASPM.\n");
-                provider->configWrite16(pcieCapOffset + kIOPCIELinkControl, (pcieLinkCtl & ~(kIOPCIELinkCtlL0s | kIOPCIELinkCtlL1 | kIOPCIELinkCtlClkReqEn)));
+                provider-> setASPMState(this, 0);
             } else {
                 IOLog("Ethernet [RealtekRTL8111]: Warning: PCIe ASPM enabled.\n");
                 linuxData.aspm = 1;
