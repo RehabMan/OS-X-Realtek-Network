@@ -25,7 +25,7 @@ Note: The current v2 build supports only Mountain Lion 10.8 or newer.
 
 Downloads are available on Bitbucket:
 
-https://bitbucket.org/RehabMan/os-x-realtek-network/downloads
+https://bitbucket.org/RehabMan/os-x-realtek-network/downloads/
 
 Note: Archived (old) downloads are available on Google Code:
 
