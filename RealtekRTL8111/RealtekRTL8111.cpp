@@ -1791,13 +1791,8 @@ void RTL8111::rxInterrupt()
         
         /* If the packet was replaced we have to update the descriptor's buffer address. */
         if (replaced) {
-<<<<<<< HEAD
-            if (rxMbufCursor->getPhysicalSegmentsWithCoalesce(bufPkt, &rxSegment, 1) != 1) {
-                DebugLog("getPhysicalSegmentsWithCoalesce() failed.\n");
-=======
             if (rxMbufCursor->getPhysicalSegments(bufPkt, &rxSegment, 1) != 1) {
-                DebugLog("Ethernet [RealtekRTL8111]: getPhysicalSegments() failed.\n");
->>>>>>> 0c50944da8a559ed66c15a7c17164c4e7d10835f
+                DebugLog("getPhysicalSegments() failed.\n");
                 etherStats->dot3RxExtraEntry.resourceErrors++;
                 freePacket(bufPkt);
                 opts1 |= kRxBufferPktSize;
